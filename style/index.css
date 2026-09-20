@@ -1,0 +1,112 @@
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap');
+
+:root {
+  --libyan-red: #ce1126;
+  --libyan-green: #239f40;
+  --libyan-black: #000000;
+  --desert-sand: #e6d2b5;
+  --desert-dark: #c4a775;
+  --light-square: #f0d9b5;
+  --dark-square: #b58863;
+  --highlight: rgba(255, 255, 0, 0.5);
+  --move-hint: rgba(0, 128, 0, 0.4);
+}
+
+body {
+  box-sizing: border-box;
+  font-family: 'Tajawal', sans-serif;
+  background-color: #f8f5f0;
+  background-image: linear-gradient(45deg, var(--desert-sand) 25%, transparent 25%, transparent 75%, var(--desert-sand) 75%, var(--desert-sand)), 
+                    linear-gradient(45deg, var(--desert-sand) 25%, transparent 25%, transparent 75%, var(--desert-sand) 75%, var(--desert-sand));
+  background-size: 60px 60px;
+  background-position: 0 0, 30px 30px;
+  background-attachment: fixed;
+}
+
+.header-stripe {
+  background: linear-gradient(to right, var(--libyan-red) 33%, var(--libyan-green) 33%, var(--libyan-green) 67%, var(--libyan-black) 67%);
+}
+
+.chess-card {
+  background-color: rgba(255, 255, 255, 0.95);
+  border-radius: 15px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  transition: all 0.4s ease;
+  border: 2px solid transparent;
+}
+
+.chess-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  border-color: var(--libyan-green);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--libyan-green), #1b7e33);
+  color: white;
+  transition: all 0.3s ease;
+  border: none;
+  box-shadow: 0 4px 15px rgba(35, 159, 64, 0.3);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #1b7e33, var(--libyan-green));
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(35, 159, 64, 0.4);
+}
+
+.btn-secondary {
+  background: linear-gradient(135deg, var(--libyan-red), #a50e1f);
+  color: white;
+  transition: all 0.3s ease;
+  border: none;
+  box-shadow: 0 4px 15px rgba(206, 17, 38, 0.3);
+}
+
+.btn-secondary:hover {
+  background: linear-gradient(135deg, #a50e1f, var(--libyan-red));
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(206, 17, 38, 0.4);
+}
+
+.chess-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.learn-icon {
+  color: var(--libyan-green);
+}
+
+.play-icon {
+  color: var(--libyan-red);
+}
+
+.title-gradient {
+  background: linear-gradient(135deg, var(--libyan-green), var(--libyan-red));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.pulse-animation {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.feature-list li {
+  position: relative;
+  padding-left: 1.5rem;
+}
+
+.feature-list li::before {
+  content: "♟";
+  position: absolute;
+  left: 0;
+  color: var(--libyan-green);
+  font-weight: bold;
+}

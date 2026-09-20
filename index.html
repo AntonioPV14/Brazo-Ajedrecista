@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style/index.css">
+</head>
+<body class="min-h-full">
+    <header class="header-stripe text-white py-2">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h1 class="text-lg font-bold">Sistema Experto</h1>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 pt-12 pb-12">
+        <!-- Título Principal -->
+        <div class="text-center mb-12">
+            <h1 class="text-5xl md:text-6xl font-bold title-gradient mb-4">
+                ♔ Bienvenido al Ajedrez ♛
+            </h1>
+            <p class="text-xl text-gray-700 max-w-2xl mx-auto leading-relaxed">
+                Descubre el fascinante mundo del ajedrez. Aprende las reglas básicas o desafía tus habilidades en partidas emocionantes.
+            </p>
+        </div>
+
+        <!-- Cards Container -->
+        <div class="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+            
+            <!-- Card Aprender -->
+            <div class="chess-card p-8 text-center">
+                <div class="chess-icon learn-icon pulse-animation">♗</div>
+                <h2 class="text-3xl font-bold text-gray-800 mb-4">Aprender a Jugar</h2>
+                <p class="text-gray-600 mb-6 text-lg leading-relaxed">
+                    Domina los fundamentos del ajedrez desde cero. Aprende movimientos, estrategias y tácticas básicas.
+                </p>
+                
+                <ul class="feature-list text-left mb-8 space-y-3 text-gray-700">
+                    <li>Movimientos de cada pieza</li>
+                    <li>Reglas especiales (enroque, captura al paso)</li>
+                    <li>Estrategias de apertura</li>
+                    <li>Tácticas básicas</li>
+                    <li>Finales elementales</li>
+                </ul>
+                
+                <button class="btn-primary px-8 py-4 rounded-full text-lg font-semibold w-full" onclick="startLearning()">
+                    🎓 Comenzar a Aprender
+                </button>
+            </div>
+
+            <!-- Card Practicar -->
+            <div class="chess-card p-8 text-center">
+                <div class="chess-icon play-icon pulse-animation">♜</div>
+                <h2 class="text-3xl font-bold text-gray-800 mb-4">Practicar Jugando</h2>
+                <p class="text-gray-600 mb-6 text-lg leading-relaxed">
+                    Pon a prueba tus conocimientos en partidas virtuales. Juega contra la computadora.
+                </p>
+                
+                <ul class="feature-list text-left mb-8 space-y-3 text-gray-700">
+                    <li>Partidas contra IA</li>
+                    <li>Diferentes niveles de dificultad</li>
+                    <li>Entrenamiento personalizado</li>
+                    <li>Análisis de partidas</li>
+                    <li>Estadísticas de progreso</li>
+                </ul>
+                
+                <button class="btn-secondary px-8 py-4 rounded-full text-lg font-semibold w-full" onclick="startPlaying()">
+                    ⚔️ Empezar a Jugar
+                </button>
+            </div>
+        </div>
+
+        <!-- Sección adicional -->
+        <div class="text-center mt-16">
+            <div class="chess-card p-6 max-w-2xl mx-auto">
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">¿Por qué elegir el ajedrez?</h3>
+                <p class="text-gray-600 leading-relaxed">
+                    El ajedrez desarrolla el pensamiento estratégico, mejora la concentración y estimula la creatividad. 
+                    Es un juego milenario que conecta culturas y generaciones, ofreciendo desafíos infinitos para mentes curiosas.
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <footer class="header-stripe text-white py-2">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <p class="text-sm">&copy; 2025 Robot  Ajedrecita UJGH </p>
+        </div>
+    </footer>
+
+    <script>
+        function startLearning() {
+            window.location.href = 'views/learn.html';
+        }
+
+        function startPlaying() {
+            window.location.href = 'views/tablero.html';
+        }
+
+
+
+        // Animación de entrada para las cards
+        window.addEventListener('load', function() {
+            const cards = document.querySelectorAll('.chess-card');
+            cards.forEach((card, index) => {
+                setTimeout(() => {
+                    card.style.opacity = '0';
+                    card.style.transform = 'translateY(50px)';
+                    card.style.transition = 'all 0.6s ease';
+                    
+                    setTimeout(() => {
+                        card.style.opacity = '1';
+                        card.style.transform = 'translateY(0)';
+                    }, 100);
+                }, index * 200);
+            });
+        });
+    </script>
+</script>
+
+        <!-- Modal para pedir nombre del estudiante -->
+        <div id="student-modal-overlay" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style="display:none;">
+            <div id="student-modal" class="bg-white rounded-lg shadow-lg w-full max-w-md p-6 mx-4">
+                <h2 class="text-2xl font-bold mb-4 text-center">Ingresa tu nombre</h2>
+                <div class="mb-4">
+                    <input id="student-name" type="text" class="w-full border rounded px-3 py-2" placeholder="Nombre del estudiante" />
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button id="student-save" class="btn-primary px-4 py-2 rounded">Guardar</button>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            (function() {
+                const overlay = document.getElementById('student-modal-overlay');
+                const input = document.getElementById('student-name');
+                const saveBtn = document.getElementById('student-save');
+
+                function openModal() {
+                    overlay.style.display = 'flex';
+                    setTimeout(() => input.focus(), 50);
+                }
+                function closeModal() {
+                    overlay.style.display = 'none';
+                }
+
+                function loadStudents() {
+                    try {
+                        const raw = localStorage.getItem('students');
+                        return raw ? JSON.parse(raw) : [];
+                    } catch (e) {
+                        console.error('Error parsing students JSON', e);
+                        return [];
+                    }
+                }
+
+                function saveStudents(list) {
+                    localStorage.setItem('students', JSON.stringify(list));
+                }
+
+                async function saveStudent() {
+                    const name = input.value.trim();
+                    if (!name) {
+                        input.classList.add('border-red-500');
+                        input.focus();
+                        return;
+                    }
+
+                    // Intentar enviar al servidor (si está disponible). Si falla, caer en fallback a localStorage.
+                    try {
+                        const resp = await fetch('http://localhost:3000/students', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ name })
+                        });
+
+                        if (resp.ok) {
+                                // Guardado en servidor - marcar como estudiante activo y cerrar modal (no redirigir)
+                                saveBtn.textContent = 'Guardado ✓';
+                                const student = await resp.json().catch(() => null);
+                                try {
+                                    localStorage.setItem('activeStudent', name);
+                                    if (student && student.name) {
+                                        // also keep a lightweight students list in localStorage for offline use
+                                        const list = loadStudents();
+                                        // remove existing same-name
+                                        const idx = list.findIndex(s => s.name && s.name.toLowerCase() === name.toLowerCase());
+                                        if (idx !== -1) list.splice(idx,1);
+                                        list.push({ name, createdAt: (student.createdAt || new Date().toISOString()) });
+                                        saveStudents(list);
+                                    }
+                                } catch(e) { /* ignore */ }
+                                setTimeout(() => closeModal(), 400);
+                                return;
+                            }
+                    } catch (e) {
+                        console.warn('Servidor no disponible, usando localStorage como fallback', e);
+                    }
+
+                    // Fallback: guardar en localStorage (existente)
+                    try {
+                        const students = loadStudents();
+                        const newStudent = {
+                            name,
+                            createdAt: new Date().toISOString()
+                        };
+                        students.push(newStudent);
+                        saveStudents(students);
+
+                        saveBtn.textContent = 'Guardado ✓';
+                        try {
+                            localStorage.setItem('activeStudent', name);
+                        } catch(e){}
+                        setTimeout(() => closeModal(), 400);
+                    } catch (e) {
+                        console.error('Error guardando en localStorage', e);
+                        input.classList.add('border-red-500');
+                    }
+                }
+
+                // Mostrar modal al entrar a la página
+                window.addEventListener('DOMContentLoaded', function() {
+                    openModal();
+                });
+
+                saveBtn.addEventListener('click', saveStudent);
+
+                // Permitir Enter en el input
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') saveStudent();
+                });
+
+            })();
+        </script>
+
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9903a9ec9071e564',t:'MTc2MDc0NDY2NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

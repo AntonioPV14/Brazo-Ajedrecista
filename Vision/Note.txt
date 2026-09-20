@@ -1,0 +1,9 @@
+Ejecutar Python
+
+python calibracionManual.py --rotate 270
+python ejecutarTablero.py 
+
+
+
+
+

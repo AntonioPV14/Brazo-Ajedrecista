@@ -1,0 +1,3031 @@
+<html lang="es"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Control del Robot de Ajedrescita UJGH </title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&amp;display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css">
+    <style>
+        :root {
+            --libyan-red: #ce1126;
+            --libyan-green: #239f40;
+            --libyan-black: #000000;
+            --desert-sand: #e6d2b5;
+            --desert-dark: #c4a775;
+            --light-square: #f0d9b5;
+            --dark-square: #b58863;
+            --highlight: rgba(255, 255, 0, 0.5);
+            --move-hint: rgba(0, 128, 0, 0.4);
+        }
+        
+        body { 
+            font-family: 'Tajawal', sans-serif;
+            background-color: #f8f5f0;
+            background-image: linear-gradient(45deg, var(--desert-sand) 25%, transparent 25%, transparent 75%, var(--desert-sand) 75%, var(--desert-sand)), 
+                              linear-gradient(45deg, var(--desert-sand) 25%, transparent 25%, transparent 75%, var(--desert-sand) 75%, var(--desert-sand));
+            background-size: 60px 60px;
+            background-position: 0 0, 30px 30px;
+            background-attachment: fixed;
+        }
+        h1, h2, h3, h4, h5, h6 { font-family: 'Tajawal', sans-serif; }
+        
+        .chess-board {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+            aspect-ratio: 1;
+            border: 2px solid #1f2937;
+        }
+        
+        .chess-square {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+        
+        .chess-square.light { background-color: var(--light-square); }
+        .chess-square.dark { background-color: var(--dark-square); }
+        
+        .chess-square.selected {
+            box-shadow: inset 0 0 0 3px var(--libyan-green);
+            animation: glow 0.6s ease-in-out;
+        }
+        
+        .chess-square.valid-move {
+            position: relative;
+        }
+        
+        .chess-square.valid-move::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: var(--libyan-green);
+            border-radius: 50%;
+            animation: pulse 0.6s ease-in-out infinite alternate;
+        }
+
+        .chess-square.dimmed {
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        .chess-square.highlighted {
+            opacity: 1;
+            background-color: rgba(35, 159, 64, 0.2) !important;
+        }
+        
+        .chess-square.capture-move::after {
+            background-color: var(--libyan-red);
+            border: 2px solid #fff;
+        }
+        
+        @keyframes glow {
+            0% { box-shadow: inset 0 0 0 0px var(--libyan-green); }
+            100% { box-shadow: inset 0 0 0 3px var(--libyan-green); }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.7; }
+            100% { transform: scale(1.15); opacity: 1; }
+        }
+        
+        .tutorial-card {
+            transition: all 0.3s ease;
+        }
+        
+        .tutorial-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .tutorial-card.active {
+            border-color: var(--libyan-green);
+            background-color: rgba(35, 159, 64, 0.1);
+        }
+        
+        .chat-bubble {
+            max-width: 85%;
+            word-wrap: break-word;
+        }
+        
+        .chat-bubble.assistant {
+            background-color: #f3f4f6;
+            border-radius: 18px 18px 18px 4px;
+        }
+        
+        .chat-bubble.user {
+            background-color: var(--libyan-green);
+            color: white;
+            border-radius: 18px 18px 4px 18px;
+            margin-left: auto;
+        }
+        
+        .emergency-btn {
+            background-color: var(--libyan-red);
+            animation: emergency-pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes emergency-pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(206, 17, 38, 0.4); }
+            50% { box-shadow: 0 0 0 10px rgba(206, 17, 38, 0); }
+        }
+        
+        .countdown {
+            font-size: 4rem;
+            font-weight: bold;
+            color: var(--libyan-red);
+            animation: countdown-pulse 1s ease-in-out;
+        }
+        
+        @keyframes countdown-pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        
+        .voice-wave {
+            display: inline-block;
+            width: 4px;
+            height: 20px;
+            background-color: var(--libyan-green);
+            margin: 0 1px;
+            animation: voice-wave 1.2s ease-in-out infinite;
+        }
+        
+        .voice-wave:nth-child(2) { animation-delay: 0.1s; }
+        .voice-wave:nth-child(3) { animation-delay: 0.2s; }
+        .voice-wave:nth-child(4) { animation-delay: 0.3s; }
+        .voice-wave:nth-child(5) { animation-delay: 0.4s; }
+        
+        @keyframes voice-wave {
+            0%, 100% { height: 4px; }
+            50% { height: 20px; }
+        }
+        
+        .lesson-card.completed {
+            background-color: rgba(35, 159, 64, 0.1);
+            border-color: var(--libyan-green);
+        }
+        
+        .lesson-card.locked {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .lesson-card.locked:hover {
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .mode-btn.active {
+            border-color: var(--libyan-green);
+            background-color: rgba(35, 159, 64, 0.1);
+        }
+        
+        .notification {
+            background: white;
+            border-radius: 8px;
+            padding: 12px 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            border-left: 4px solid var(--libyan-green);
+            transform: translateX(100%);
+            animation: slideIn 0.3s ease-out forwards;
+            max-width: 300px;
+        }
+        
+        .notification.success {
+            border-left-color: var(--libyan-green);
+        }
+        
+        .notification.achievement {
+            border-left-color: #fbbf24;
+            background: linear-gradient(135deg, #fef3c7, #ffffff);
+        }
+        
+        .notification.error {
+            border-left-color: var(--libyan-red);
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+        
+        .piece-animation {
+            animation: pieceMove 1.5s ease-in-out;
+        }
+        
+        @keyframes pieceMove {
+            0% { transform: scale(1); }
+            25% { transform: scale(1.2) rotate(5deg); }
+            50% { transform: scale(1.1) rotate(-3deg); }
+            75% { transform: scale(1.15) rotate(2deg); }
+            100% { transform: scale(1) rotate(0deg); }
+        }
+        
+        .challenge-timer.warning {
+            color: var(--libyan-red);
+            animation: timerPulse 1s ease-in-out infinite;
+        }
+
+        .header-stripe {
+            background: linear-gradient(to right, var(--libyan-red) 33%, var(--libyan-green) 33%, var(--libyan-green) 67%, var(--libyan-black) 67%);
+            height: 2rem;
+            width: 100%;
+            position: fixed;
+            top: 0;
+            z-index: 10;
+        }
+
+        .footer-stripe {
+            background: linear-gradient(to right, var(--libyan-red) 33%, var(--libyan-green) 33%, var(--libyan-green) 67%, var(--libyan-black) 67%);
+            height: 2rem;
+            width: 100%;
+            position: fixed;
+            bottom: 0;
+            z-index: 10;
+        }
+
+        @keyframes timerPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Tour Styles */
+        .tour-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 9998;
+            display: none;
+        }
+
+        .tour-highlight {
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 3px solid var(--libyan-green);
+            border-radius: 8px;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7);
+            animation: highlight-pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes highlight-pulse {
+            0%, 100% { border-color: var(--libyan-green); }
+            50% { border-color: var(--libyan-red); }
+        }
+
+        .tour-tooltip {
+            position: absolute;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            max-width: 300px;
+            z-index: 9999;
+            font-size: 14px;
+            line-height: 1.5;
+            display: none;
+        }
+
+        .tour-tooltip::before {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 0;
+            border: 10px solid transparent;
+        }
+
+        .tour-tooltip.top::before {
+            border-bottom-color: white;
+            border-top: none;
+            top: -20px;
+            left: 20px;
+        }
+
+        .tour-tooltip.bottom::before {
+            border-top-color: white;
+            border-bottom: none;
+            bottom: -20px;
+            left: 20px;
+        }
+
+        .tour-tooltip.left::before {
+            border-right-color: white;
+            border-left: none;
+            left: -20px;
+            top: 20px;
+        }
+
+        .tour-tooltip.right::before {
+            border-left-color: white;
+            border-right: none;
+            right: -20px;
+            top: 20px;
+        }
+
+        .tour-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+        }
+
+        .tour-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .tour-btn.primary {
+            background-color: var(--libyan-green);
+            color: white;
+        }
+
+        .tour-btn.primary:hover {
+            background-color: #1b7e33;
+        }
+
+        .tour-btn.secondary {
+            background-color: #f3f4f6;
+            color: #374151;
+        }
+
+        .tour-btn.secondary:hover {
+            background-color: #e5e7eb;
+        }
+
+        .tour-step-counter {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: var(--libyan-green);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        /* Chat Styles */
+        .chat-message {
+            margin-bottom: 1rem;
+            padding: 0.5rem 1rem;
+            border-radius: 1.5rem;
+            max-width: 80%;
+            display: inline-block;
+        }
+        .user-message {
+            background-color: #3b82f6;
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 0;
+        }
+        .assistant-message {
+            background-color: #e5e7eb;
+            color: #1f2937;
+            border-bottom-left-radius: 0;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
+        .typing-indicator span {
+            animation: pulse 1.5s infinite;
+        }
+    </style>
+    <style>*, ::before, ::after{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/* ! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com */*,::after,::before{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}::after,::before{--tw-content:''}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.pointer-events-none{pointer-events:none}.fixed{position:fixed}.absolute{position:absolute}.relative{position:relative}.inset-0{inset:0px}.right-4{right:1rem}.top-4{top:1rem}.z-10{z-index:10}.z-20{z-index:20}.z-40{z-index:40}.z-50{z-index:50}.mx-4{margin-left:1rem;margin-right:1rem}.mx-auto{margin-left:auto;margin-right:auto}.mb-1{margin-bottom:0.25rem}.mb-3{margin-bottom:0.75rem}.mb-4{margin-bottom:1rem}.mb-\[50px\]{margin-bottom:50px}.ml-3{margin-left:0.75rem}.mr-2{margin-right:0.5rem}.mt-1{margin-top:0.25rem}.mt-6{margin-top:1.5rem}.mt-\[50px\]{margin-top:50px}.mt-auto{margin-top:auto}.block{display:block}.flex{display:flex}.grid{display:grid}.hidden{display:none}.h-10{height:2.5rem}.h-2{height:0.5rem}.h-32{height:8rem}.h-96{height:24rem}.max-h-32{max-height:8rem}.max-h-40{max-height:10rem}.min-h-screen{min-height:100vh}.w-10{width:2.5rem}.w-32{width:8rem}.w-full{width:100%}.max-w-7xl{max-width:80rem}.max-w-lg{max-width:32rem}.max-w-md{max-width:28rem}.flex-1{flex:1 1 0%}.grid-cols-1{grid-template-columns:repeat(1, minmax(0, 1fr))}.grid-cols-3{grid-template-columns:repeat(3, minmax(0, 1fr))}.flex-col{flex-direction:column}.items-end{align-items:flex-end}.items-center{align-items:center}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-2{gap:0.5rem}.gap-4{gap:1rem}.gap-6{gap:1.5rem}.space-x-2 > :not([hidden]) ~ :not([hidden]){--tw-space-x-reverse:0;margin-right:calc(0.5rem * var(--tw-space-x-reverse));margin-left:calc(0.5rem * calc(1 - var(--tw-space-x-reverse)))}.space-x-3 > :not([hidden]) ~ :not([hidden]){--tw-space-x-reverse:0;margin-right:calc(0.75rem * var(--tw-space-x-reverse));margin-left:calc(0.75rem * calc(1 - var(--tw-space-x-reverse)))}.space-y-1 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.25rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.25rem * var(--tw-space-y-reverse))}.space-y-2 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.5rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.5rem * var(--tw-space-y-reverse))}.space-y-3 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.75rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.75rem * var(--tw-space-y-reverse))}.space-y-4 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1rem * var(--tw-space-y-reverse))}.space-y-6 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1.5rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1.5rem * var(--tw-space-y-reverse))}.overflow-y-auto{overflow-y:auto}.rounded{border-radius:0.25rem}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:0.5rem}.border{border-width:1px}.border-2{border-width:2px}.border-gray-200{--tw-border-opacity:1;border-color:rgb(229 231 235 / var(--tw-border-opacity, 1))}.border-gray-300{--tw-border-opacity:1;border-color:rgb(209 213 219 / var(--tw-border-opacity, 1))}.bg-black{--tw-bg-opacity:1;background-color:rgb(0 0 0 / var(--tw-bg-opacity, 1))}.bg-blue-500{--tw-bg-opacity:1;background-color:rgb(59 130 246 / var(--tw-bg-opacity, 1))}.bg-gray-100{--tw-bg-opacity:1;background-color:rgb(243 244 246 / var(--tw-bg-opacity, 1))}.bg-gray-200{--tw-bg-opacity:1;background-color:rgb(229 231 235 / var(--tw-bg-opacity, 1))}.bg-gray-300{--tw-bg-opacity:1;background-color:rgb(209 213 219 / var(--tw-bg-opacity, 1))}.bg-gray-50{--tw-bg-opacity:1;background-color:rgb(249 250 251 / var(--tw-bg-opacity, 1))}.bg-white{--tw-bg-opacity:1;background-color:rgb(255 255 255 / var(--tw-bg-opacity, 1))}.bg-opacity-50{--tw-bg-opacity:0.5}.p-2{padding:0.5rem}.p-3{padding:0.75rem}.p-4{padding:1rem}.p-6{padding:1.5rem}.px-1{padding-left:0.25rem;padding-right:0.25rem}.px-2{padding-left:0.5rem;padding-right:0.5rem}.px-3{padding-left:0.75rem;padding-right:0.75rem}.px-4{padding-left:1rem;padding-right:1rem}.py-1{padding-top:0.25rem;padding-bottom:0.25rem}.py-2{padding-top:0.5rem;padding-bottom:0.5rem}.py-3{padding-top:0.75rem;padding-bottom:0.75rem}.py-4{padding-top:1rem;padding-bottom:1rem}.py-6{padding-top:1.5rem;padding-bottom:1.5rem}.pb-12{padding-bottom:3rem}.pt-12{padding-top:3rem}.text-left{text-align:left}.text-center{text-align:center}.text-right{text-align:right}.text-2xl{font-size:1.5rem;line-height:2rem}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-sm{font-size:0.875rem;line-height:1.25rem}.text-xl{font-size:1.25rem;line-height:1.75rem}.text-xs{font-size:0.75rem;line-height:1rem}.font-bold{font-weight:700}.font-medium{font-weight:500}.font-semibold{font-weight:600}.text-blue-600{--tw-text-opacity:1;color:rgb(37 99 235 / var(--tw-text-opacity, 1))}.text-gray-500{--tw-text-opacity:1;color:rgb(107 114 128 / var(--tw-text-opacity, 1))}.text-gray-600{--tw-text-opacity:1;color:rgb(75 85 99 / var(--tw-text-opacity, 1))}.text-gray-700{--tw-text-opacity:1;color:rgb(55 65 81 / var(--tw-text-opacity, 1))}.text-gray-800{--tw-text-opacity:1;color:rgb(31 41 55 / var(--tw-text-opacity, 1))}.text-gray-900{--tw-text-opacity:1;color:rgb(17 24 39 / var(--tw-text-opacity, 1))}.text-green-600{--tw-text-opacity:1;color:rgb(22 163 74 / var(--tw-text-opacity, 1))}.text-white{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity, 1))}.shadow-lg{--tw-shadow:0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-sm{--tw-shadow:0 1px 2px 0 rgb(0 0 0 / 0.05);--tw-shadow-colored:0 1px 2px 0 var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.transition-all{transition-property:all;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.transition-colors{transition-property:color, background-color, border-color, fill, stroke, -webkit-text-decoration-color;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, -webkit-text-decoration-color;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.duration-500{transition-duration:500ms}.hover\:border-gray-300:hover{--tw-border-opacity:1;border-color:rgb(209 213 219 / var(--tw-border-opacity, 1))}.hover\:bg-blue-600:hover{--tw-bg-opacity:1;background-color:rgb(37 99 235 / var(--tw-bg-opacity, 1))}.hover\:bg-gray-200:hover{--tw-bg-opacity:1;background-color:rgb(229 231 235 / var(--tw-bg-opacity, 1))}.hover\:bg-gray-400:hover{--tw-bg-opacity:1;background-color:rgb(156 163 175 / var(--tw-bg-opacity, 1))}.hover\:bg-gray-50:hover{--tw-bg-opacity:1;background-color:rgb(249 250 251 / var(--tw-bg-opacity, 1))}.hover\:shadow-md:hover{--tw-shadow:0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 4px 6px -1px var(--tw-shadow-color), 0 2px 4px -2px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.focus\:outline-none:focus{outline:2px solid transparent;outline-offset:2px}.focus\:ring-2:focus{--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);box-shadow:var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000)}.focus\:ring-green-500:focus{--tw-ring-opacity:1;--tw-ring-color:rgb(34 197 94 / var(--tw-ring-opacity, 1))}@media (min-width: 640px){.sm\:px-6{padding-left:1.5rem;padding-right:1.5rem}}@media (min-width: 768px){.md\:grid-cols-3{grid-template-columns:repeat(3, minmax(0, 1fr))}}@media (min-width: 1024px){.lg\:col-span-3{grid-column:span 3 / span 3}.lg\:col-span-6{grid-column:span 6 / span 6}.lg\:grid-cols-12{grid-template-columns:repeat(12, minmax(0, 1fr))}.lg\:px-8{padding-left:2rem;padding-right:2rem}}</style></head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+    <header class="header-stripe text-white py-2">
+    </header>
+    <!-- Main Content -->
+    <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pt-12 pb-12">
+        <section id="aprende-ajedrez" class="space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Left Column: Lecciones -->
+                <aside class="lg:col-span-3 space-y-4">
+                    <!-- Botón de Regreso -->
+                    <div class="bg-white rounded-lg shadow-sm border p-4">
+                        <button onclick="window.location.href='../index.html'" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-4 rounded-lg transition-colors">
+                            ← Regresar al Inicio
+                        </button>
+                    </div>
+
+                    <!-- Panel de Progreso -->
+                    <div class="bg-white rounded-lg shadow-sm border p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <h2 class="text-xl font-bold text-gray-800">🎓 Tu Progreso</h2>
+                            <div class="text-right">
+                                <div class="text-2xl font-bold" style="color: var(--libyan-green);" id="total-points">318</div>
+                                <div class="text-xs text-gray-500">puntos</div>
+                                <!-- Botón para generar reporte (placeholder) -->
+                                <button id="generate-report-btn" class="mt-2 w-full text-xs px-3 py-1 rounded bg-blue-500 hover:bg-blue-600 text-white transition-colors">
+                                    📄 Generar Reporte
+                                </button>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="flex justify-between text-sm mb-1">
+                                <span>Nivel <span id="current-level">3</span></span>
+                                <span><span id="current-exp">18</span>/<span id="next-level-exp">300</span></span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="h-2 rounded-full transition-all duration-500" style="background-color: var(--libyan-green); width: 6%;" id="progress-bar"></div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 text-center text-xs">
+                            <div>
+                                <div class="font-semibold" id="pieces-learned">6</div>
+                                <div class="text-gray-500">Piezas</div>
+                            </div>
+                            <div>
+                                <div class="font-semibold" id="exercises-completed">0</div>
+                                <div class="text-gray-500">Ejercicios</div>
+                            </div>
+                            <div>
+                                <div class="font-semibold" id="streak-count">0</div>
+                                <div class="text-gray-500">Racha</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Selector de Modo -->
+                    <div class="bg-white rounded-lg shadow-sm border p-4">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3">📚 Modo de Aprendizaje</h3>
+                        <div class="space-y-2">
+                            <button id="mode-tutorial" class="mode-btn w-full p-3 text-left rounded-lg border-2 transition-all" style="border-color: var(--libyan-green); background-color: rgba(35, 159, 64, 0.1);">
+                                <div class="font-semibold">🎯 Tutorial Guiado</div>
+                                <div class="text-sm text-gray-600">Aprende paso a paso con explicaciones</div>
+                            </button>
+                            <button id="mode-control" class="mode-btn w-full p-3 text-left rounded-lg border-2 border-gray-200 hover:border-gray-300 transition-all">
+                                <div class="font-semibold">🎮 Control Directo</div>
+                                <div class="text-sm text-gray-600">Mueve piezas y el robot las ejecuta</div>
+                            </button>
+                            <button id="mode-practice" class="mode-btn w-full p-3 text-left rounded-lg border-2 border-gray-200 hover:border-gray-300 transition-all hidden">
+                                <div class="font-semibold">💪 Práctica Libre</div>
+                                <div class="text-sm text-gray-600">Juega ajedrez con el brazo robótico: indícale tu jugada y deja que te sorprenda con la suya.</div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Panel de Lecciones -->
+                    <div class="bg-white rounded-lg shadow-sm border p-4">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3">🏆 Lecciones Progresivas</h3>
+                        <div class="space-y-2" id="lessons-container">
+                            <!-- Peón -->
+                            <button class="lesson-card w-full flex items-center p-3 bg-white border rounded-lg hover:shadow-md transition-all completed active" data-piece="pawn" data-difficulty="1">
+                                <div class="w-10 h-10 flex items-center justify-center rounded text-xl" style="background-color: var(--desert-sand);">♟</div>
+                                <div class="ml-3 text-left flex-1">
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-semibold text-gray-900">Peón</span>
+                                        <span class="text-xs px-2 py-1 rounded-full" style="background-color: var(--libyan-green); color: white;">Básico</span>
+                                        <span class="lesson-status text-lg">✅</span>
+                                    </div>
+                                    <div class="text-xs text-gray-500">El soldado del ajedrez • +10 puntos</div>
+                                </div>
+                            </button>
+                            
+                            <!-- Torre -->
+                            <button class="lesson-card w-full flex items-center p-3 bg-white border rounded-lg hover:shadow-md transition-all completed" data-piece="rook" data-difficulty="2">
+                                <div class="w-10 h-10 flex items-center justify-center rounded text-xl" style="background-color: var(--desert-sand);">♜</div>
+                                <div class="ml-3 text-left flex-1">
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-semibold text-gray-900">Torre</span>
+                                        <span class="text-xs px-2 py-1 rounded-full" style="background-color: var(--desert-dark); color: white;">Fácil</span>
+                                        <span class="lesson-status text-lg">✅</span>
+                                    </div>
+                                    <div class="text-xs text-gray-500">La fortaleza móvil • +15 puntos</div>
+                                </div>
+                            </button>
+                            
+                            <!-- Alfil -->
+                            <button class="lesson-card w-full flex items-center p-3 bg-white border rounded-lg hover:shadow-md transition-all completed" data-piece="bishop" data-difficulty="3">
+                                <div class="w-10 h-10 flex items-center justify-center rounded text-xl" style="background-color: var(--desert-sand);">♝</div>
+                                <div class="ml-3 text-left flex-1">
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-semibold text-gray-900">Alfil</span>
+                                        <span class="text-xs px-2 py-1 rounded-full" style="background-color: var(--desert-dark); color: white;">Fácil</span>
+                                        <span class="lesson-status text-lg">✅</span>
+                                    </div>
+                                    <div class="text-xs text-gray-500">El explorador diagonal • +15 puntos</div>
+                                </div>
+                            </button>
+                            
+                            <!-- Caballo -->
+                            <button class="lesson-card w-full flex items-center p-3 bg-white border rounded-lg hover:shadow-md transition-all completed" data-piece="knight" data-difficulty="4">
+                                <div class="w-10 h-10 flex items-center justify-center rounded text-xl" style="background-color: var(--desert-sand);">♞</div>
+                                <div class="ml-3 text-left flex-1">
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-semibold text-gray-900">Caballo</span>
+                                        <span class="text-xs px-2 py-1 rounded-full" style="background-color: var(--libyan-red); color: white;">Medio</span>
+                                        <span class="lesson-status text-lg">✅</span>
+                                    </div>
+                                    <div class="text-xs text-gray-500">El saltador mágico • +20 puntos</div>
+                                </div>
+                            </button>
+                            
+                            <!-- Reina -->
+                            <button class="lesson-card w-full flex items-center p-3 bg-white border rounded-lg hover:shadow-md transition-all completed" data-piece="queen" data-difficulty="5">
+                                <div class="w-10 h-10 flex items-center justify-center rounded text-xl" style="background-color: var(--desert-sand);">♛</div>
+                                <div class="ml-3 text-left flex-1">
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-semibold text-gray-900">Reina</span>
+                                        <span class="text-xs px-2 py-1 rounded-full" style="background-color: var(--libyan-red); color: white;">Difícil</span>
+                                        <span class="lesson-status text-lg">✅</span>
+                                    </div>
+                                    <div class="text-xs text-gray-500">La pieza más poderosa • +25 puntos</div>
+                                </div>
+                            </button>
+                            
+                            <!-- Rey -->
+                            <button class="lesson-card w-full flex items-center p-3 bg-white border rounded-lg hover:shadow-md transition-all completed" data-piece="king" data-difficulty="6">
+                                <div class="w-10 h-10 flex items-center justify-center rounded text-xl" style="background-color: var(--desert-sand);">♚</div>
+                                <div class="ml-3 text-left flex-1">
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-semibold text-gray-900">Rey</span>
+                                        <span class="text-xs px-2 py-1 rounded-full" style="background-color: var(--libyan-black); color: white;">Experto</span>
+                                        <span class="lesson-status text-lg">✅</span>
+                                    </div>
+                                    <div class="text-xs text-gray-500">El líder del reino • +30 puntos</div>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                </aside>
+
+                <!-- Center Column: Tablero -->
+                <main class="lg:col-span-6">
+                    <div class="bg-white rounded-lg shadow-sm border p-4">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-xl font-semibold text-gray-900">Tablero - Visualizador</h3>
+                            <div class="flex items-center space-x-2">
+                                <button onclick="homePosition()" class="bg-white text-gray-800 px-4 py-2 rounded-lg font-medium hover:bg-black-50 transition-colors">
+                                    🏠 Home
+                                </button>
+                                <button id="play-animation" class="text-white px-4 py-2 rounded-lg font-medium transition-colors" style="background-color: var(--libyan-green);" onmouseover="this.style.backgroundColor='#1b7e33'" onmouseout="this.style.backgroundColor='var(--libyan-green)'" hidden>
+                                    ▶️ Ver animación
+                                </button>
+                                <button id="execute-robot" class="text-white px-4 py-2 rounded-lg font-medium transition-colors" style="background-color: var(--libyan-red);" onmouseover="this.style.backgroundColor='#a50e1f'" onmouseout="this.style.backgroundColor='var(--libyan-red)'" hidden>
+                                    🤖 Ejecutar en el robot
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="relative">
+                            <div id="tutorial-overlay" class="absolute inset-0 pointer-events-none z-10"></div>
+                            <div id="countdown-overlay" class="absolute inset-0 flex items-center justify-center z-20 hidden">
+                                <div class="countdown bg-white rounded-full w-32 h-32 flex items-center justify-center shadow-lg" id="countdown-number">3</div>
+                            </div>
+                            <div class="chess-board mx-auto max-w-lg mt-[50px] mb-[50px]" id="chess-board"><div class="chess-square light" data-row="0" data-col="0"></div><div class="chess-square dark" data-row="0" data-col="1"></div><div class="chess-square light" data-row="0" data-col="2"></div><div class="chess-square dark" data-row="0" data-col="3"></div><div class="chess-square light" data-row="0" data-col="4"></div><div class="chess-square dark" data-row="0" data-col="5"></div><div class="chess-square light" data-row="0" data-col="6"></div><div class="chess-square dark" data-row="0" data-col="7"></div><div class="chess-square dark" data-row="1" data-col="0"></div><div class="chess-square light" data-row="1" data-col="1"></div><div class="chess-square dark" data-row="1" data-col="2"></div><div class="chess-square light" data-row="1" data-col="3"></div><div class="chess-square dark" data-row="1" data-col="4"></div><div class="chess-square light" data-row="1" data-col="5"></div><div class="chess-square dark" data-row="1" data-col="6"></div><div class="chess-square light" data-row="1" data-col="7"></div><div class="chess-square light" data-row="2" data-col="0"></div><div class="chess-square dark" data-row="2" data-col="1"></div><div class="chess-square light" data-row="2" data-col="2"></div><div class="chess-square dark" data-row="2" data-col="3"></div><div class="chess-square light" data-row="2" data-col="4"></div><div class="chess-square dark" data-row="2" data-col="5"></div><div class="chess-square light" data-row="2" data-col="6"></div><div class="chess-square dark" data-row="2" data-col="7"></div><div class="chess-square dark" data-row="3" data-col="0"></div><div class="chess-square light" data-row="3" data-col="1"></div><div class="chess-square dark" data-row="3" data-col="2"></div><div class="chess-square light" data-row="3" data-col="3"></div><div class="chess-square dark" data-row="3" data-col="4"></div><div class="chess-square light" data-row="3" data-col="5"></div><div class="chess-square dark" data-row="3" data-col="6"></div><div class="chess-square light" data-row="3" data-col="7"></div><div class="chess-square light" data-row="4" data-col="0"></div><div class="chess-square dark" data-row="4" data-col="1"></div><div class="chess-square light" data-row="4" data-col="2"></div><div class="chess-square dark selected" data-row="4" data-col="3">♟</div><div class="chess-square light" data-row="4" data-col="4"></div><div class="chess-square dark" data-row="4" data-col="5"></div><div class="chess-square light" data-row="4" data-col="6"></div><div class="chess-square dark" data-row="4" data-col="7"></div><div class="chess-square dark" data-row="5" data-col="0"></div><div class="chess-square light" data-row="5" data-col="1"></div><div class="chess-square dark valid-move" data-row="5" data-col="2"></div><div class="chess-square light valid-move" data-row="5" data-col="3"></div><div class="chess-square dark valid-move" data-row="5" data-col="4"></div><div class="chess-square light" data-row="5" data-col="5"></div><div class="chess-square dark" data-row="5" data-col="6"></div><div class="chess-square light" data-row="5" data-col="7"></div><div class="chess-square light" data-row="6" data-col="0"></div><div class="chess-square dark" data-row="6" data-col="1"></div><div class="chess-square light" data-row="6" data-col="2"></div><div class="chess-square dark" data-row="6" data-col="3"></div><div class="chess-square light" data-row="6" data-col="4"></div><div class="chess-square dark" data-row="6" data-col="5"></div><div class="chess-square light" data-row="6" data-col="6"></div><div class="chess-square dark" data-row="6" data-col="7"></div><div class="chess-square dark" data-row="7" data-col="0"></div><div class="chess-square light" data-row="7" data-col="1"></div><div class="chess-square dark" data-row="7" data-col="2"></div><div class="chess-square light" data-row="7" data-col="3"></div><div class="chess-square dark" data-row="7" data-col="4"></div><div class="chess-square light" data-row="7" data-col="5"></div><div class="chess-square dark" data-row="7" data-col="6"></div><div class="chess-square light" data-row="7" data-col="7"></div></div>
+                        </div>
+
+                        <!-- Panel de Desafío Activo -->
+                        <div id="challenge-panel" class="mt-6 p-4 rounded-lg border-2 hidden" style="border-color: var(--libyan-green); background-color: rgba(35, 159, 64, 0.05);">
+                            <div class="flex items-center justify-between mb-3">
+                                <h4 class="font-semibold text-gray-900">🎯 Desafío Activo</h4>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm px-2 py-1 rounded-full" style="background-color: var(--libyan-green); color: white;" id="challenge-points">+0 pts</span>
+                                    <div class="text-sm text-gray-600">⏱️ <span id="challenge-timer">30</span>s</div>
+                                </div>
+                            </div>
+                            <div id="challenge-question" class="text-sm text-gray-700 mb-3">
+                                <!-- Pregunta del desafío -->
+                            </div>
+                            <div class="flex gap-2">
+                                <button id="challenge-hint" class="text-xs px-3 py-1 rounded-full border border-gray-300 hover:bg-gray-50">
+                                    💡 Pista
+                                </button>
+                                <button id="challenge-skip" class="text-xs px-3 py-1 rounded-full border border-gray-300 hover:bg-gray-50">
+                                    ⏭️ Saltar
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Controles de Ejecución -->
+                        <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+                            <h4 class="font-semibold text-gray-900 mb-3 hidden">Controles de Ejecución</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+                                <div class="flex items-end">
+                                    <button id="repeat-explanation" class="w-full text-white px-4 py-2 rounded-lg font-medium transition-colors" style="background-color: var(--desert-dark);" onmouseover="this.style.backgroundColor='#a08a5a'" onmouseout="this.style.backgroundColor='var(--desert-dark)'">
+                                        🔄 Repetir explicación
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+
+                <!-- Right Column: Chat y Controles -->
+                <aside class="lg:col-span-3 space-y-4">
+                    <!-- Chat del Asistente -->
+                    <div class="bg-white rounded-lg shadow-sm border p-4 h-96 flex flex-col">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="font-semibold text-gray-900">🤖 Maestro Robot</h4>
+                            <div class="flex items-center space-x-2">
+                                <button id="tts-toggle" class="p-2 rounded bg-gray-100 hover:bg-gray-200 transition-colors" title="Activar/Desactivar voz">
+                                    🎤
+                                </button>
+                                <div id="voice-indicator" class="hidden">
+                                    <span class="voice-wave"></span>
+                                    <span class="voice-wave"></span>
+                                    <span class="voice-wave"></span>
+                                    <span class="voice-wave"></span>
+                                    <span class="voice-wave"></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="chat-window" class="flex-1 overflow-y-auto space-y-3 px-1 mb-3">
+                            <div class="chat-bubble assistant p-3">
+                                ¡Hola! Soy tu maestro robot de ajedrez. Selecciona una pieza de la izquierda para aprender cómo se mueve. ¿Por cuál quieres empezar?
+                            </div>
+                        <div class="chat-bubble assistant p-3">Has seleccionado el Peón. El peón se mueve hacia adelante una casilla. Si es su primer movimiento, puede avanzar dos casillas. Para capturar, se mueve en diagonal hacia la casilla del adversario.</div></div>
+                        
+                        <form id="chat-form" class="flex items-center space-x-2">
+                            <input id="chat-input" class="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="Pregunta al maestro robot...">
+                            <button type="submit" class="text-white px-4 py-2 rounded-lg transition-colors" style="background-color: var(--libyan-green);" onmouseover="this.style.backgroundColor='#1b7e33'" onmouseout="this.style.backgroundColor='var(--libyan-green)'">
+                                Enviar
+                            </button>
+                        </form>
+                    </div>
+
+
+
+                    <!-- Historial de Ejecución -->
+                    <div class="bg-white rounded-lg shadow-sm border p-4">
+                        <h4 class="font-semibold text-gray-900 mb-3">📋 Historial / Registro</h4>
+                        <div id="execution-log" class="text-sm text-gray-600 max-h-40 overflow-y-auto space-y-1">
+                            <div class="text-green-600">✅ Sistema iniciado correctamente</div>
+                            <div class="text-blue-600">ℹ️ Esperando selección de pieza...</div>
+                        <div>1:00:24 - 📚 Tutorial seleccionado: Peón</div><div>1:00:26 - 🎯 Casilla seleccionada: d5</div><div>1:28:56 - 🎯 Casilla seleccionada: d4</div></div>
+                    </div>
+                    <div class="serial-control-group p-3 bg-gray-800 rounded-lg shadow-inner">
+                        <h3 class="text-white text-md font-semibold mb-2">Conexión Serial (Arduino)</h3>
+            <button id="serial-connect-btn" type="button" onclick="toggleSerialConnection()"
+                class="w-full py-2 px-4 rounded-lg font-bold transition duration-300 bg-libyan-red hover:bg-red-700 text-white shadow-md">
+                            🔌 Conectar Puerto COM
+                        </button>
+                        <p id="serial-status" class="text-sm mt-2 text-center text-red-400">Desconectado</p>
+                    </div>
+                </aside>
+            </div>
+        </section>
+    </main>
+
+    <!-- Sistema de Notificaciones -->
+    <div id="notifications-container" class="fixed top-4 right-4 z-40 space-y-2">
+        <!-- Las notificaciones se agregan dinámicamente aquí -->
+    </div>
+
+    <!-- Tour Interactivo -->
+    <div id="tour-overlay" class="tour-overlay">
+        <div id="tour-highlight" class="tour-highlight"></div>
+        <div id="tour-tooltip" class="tour-tooltip">
+            <div id="tour-step-counter" class="tour-step-counter">1/7</div>
+            <div id="tour-content">
+                <h3 id="tour-title">¡Bienvenido al Panel de Aprendizaje!</h3>
+                <p id="tour-description">Te voy a mostrar las diferentes secciones de esta página para que sepas cómo funciona cada una.</p>
+            </div>
+            <div class="tour-buttons">
+                <button id="tour-skip" class="tour-btn secondary">Saltar Tour</button>
+                <button id="tour-next" class="tour-btn primary">Siguiente</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmación -->
+    <div id="confirmation-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">🤖 Confirmación de Ejecución</h3>
+            <p class="text-gray-600 mb-4">¿Deseas que el robot ejecute este movimiento?</p>
+            <div id="move-preview" class="bg-gray-50 p-3 rounded mb-4 text-sm">
+                <strong>Movimiento:</strong> <span id="move-description"></span>
+            </div>
+            <div class="flex items-center mb-4">
+                <input type="checkbox" id="teacher-confirmation" class="mr-2">
+                <label for="teacher-confirmation" class="text-sm text-gray-700">Confirmo que soy el profesor responsable y superviso esta ejecución</label>
+            </div>
+            <div class="flex space-x-3">
+                <button id="cancel-execution" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg transition-colors">
+                    Cancelar
+                </button>
+                <button id="confirm-execution" class="flex-1 text-white px-4 py-2 rounded-lg transition-colors" style="background-color: var(--libyan-green);" onmouseover="this.style.backgroundColor='#1b7e33'" onmouseout="this.style.backgroundColor='var(--libyan-green)'" disabled="">
+                    Ejecutar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Inicializar Driver.js para el tour interactivo
+        const driver = window.driver.js.driver;
+
+        // Función para iniciar el tour
+        function startTour() {
+            const driverObj = driver({
+                showProgress: true,
+                steps: [
+                    {
+                        element: 'header',
+                        popover: {
+                            title: 'Encabezado',
+                            description: 'Barra superior y marca del panel de aprendizaje.'
+                        }
+                    },
+                    {
+                        element: '#mode-tutorial',
+                        popover: {
+                            title: 'Modo de Aprendizaje',
+                            description: 'Selecciona modos: Tutorial, Control Directo, o Práctica.'
+                        }
+                    },
+                    {
+                        element: '#lessons-container',
+                        popover: {
+                            title: 'Lecciones',
+                            description: 'Elige una lección para ver cómo se mueve cada pieza.'
+                        }
+                    },
+                    {
+                        element: '#chess-board',
+                        popover: {
+                            title: 'Tablero',
+                            description: 'Interactúa con el tablero para seleccionar piezas y destinos.'
+                        }
+                    },
+                    {
+                        element: '#chat-window',
+                        popover: {
+                            title: 'Chat del Maestro',
+                            description: 'Aquí verás explicaciones y mensajes del asistente.'
+                        }
+                    },
+                    {
+                        element: '.serial-control-group',
+                        popover: {
+                            title: 'Conexión Serial',
+                            description: 'Conecta al Arduino aquí para enviar comandos físicos (115200 baudios).'
+                        }
+                    },
+                    {
+                        element: '#execution-log',
+                        popover: {
+                            title: 'Historial / Registro',
+                            description: 'Aquí se registran eventos del sistema y los comandos serial enviados.'
+                        }
+                    }
+                ]
+            });
+
+            driverObj.drive();
+        }
+
+        // ===================================
+        // CONFIGURACIÓN DEL MODELO HUGGING FACE
+        // ===================================
+        const HF_TOKEN = "";
+        const HF_API_URL = "";
+        const HF_MODEL_NAME = "";
+
+        // Estado global de la aplicación
+        let currentPiece = null;
+        let currentMove = null;
+        let selectedSquare = null;
+        let ws = null;
+        let ttsEnabled = true;
+        let isExecuting = false;
+        let currentMode = 'tutorial';
+        let playerProgress = {
+            level: 1,
+            experience: 0,
+            totalPoints: 0,
+            piecesLearned: 0,
+            exercisesCompleted: 0,
+            streakCount: 0,
+            completedLessons: [],
+            achievements: []
+        };
+        let currentChallenge = null;
+        let challengeTimer = null;
+        let controlMode = {
+            selectedPiece: null,
+            fromSquare: null,
+            toSquare: null,
+            pendingMove: null
+        };
+
+        // Practice mode game state
+        let practiceGameActive = false;
+        let currentPlayer = 'user'; // 'user' or 'robot'
+        let gameOver = false;
+        let selectedFromSquare = null;
+        
+        // VARIABLES GLOBALES para la Conexión Serial
+        let selectedPort; 
+        let isSerialConnected = false; 
+
+        /**
+         * Alterna el estado de la conexión serial (Conectar/Desconectar).
+         * Usa navigator.serial.requestPort() para abrir la ventana de selección de puerto.
+         */
+        async function toggleSerialConnection() {
+            const button = document.getElementById('serial-connect-btn');
+            const statusText = document.getElementById('serial-status');
+
+            if (isSerialConnected) {
+                // --- LÓGICA DE DESCONEXIÓN ---
+                try {
+                    // Asegurarse de que el puerto se cierre correctamente
+                    if (selectedPort && selectedPort.readable) {
+                        try { await selectedPort.readable.getReader().cancel(); } catch(e) { /* ignore */ }
+                    }
+                    if (selectedPort && selectedPort.writable) {
+                        try { await selectedPort.writable.getWriter().close(); } catch(e) { /* ignore */ }
+                    }
+                    if (selectedPort && selectedPort.close) {
+                        await selectedPort.close();
+                    }
+                    
+                    isSerialConnected = false;
+                    selectedPort = undefined;
+
+                    // Actualizar la interfaz a Desconectado
+                    if (button) {
+                        button.textContent = '🔌 Conectar Puerto COM';
+                        button.classList.replace('bg-libyan-green', 'bg-libyan-red');
+                        button.classList.replace('hover:bg-green-700', 'hover:bg-red-700');
+                    }
+                    if (statusText) {
+                        statusText.textContent = 'Desconectado';
+                        statusText.classList.replace('text-libyan-green', 'text-red-400');
+                    }
+                    
+                    console.log('Conexión serial cerrada.');
+
+                } catch (error) {
+                    alert('Error al cerrar el puerto: ' + (error && error.message ? error.message : error));
+                }
+            } else {
+                // --- LÓGICA DE CONEXIÓN ---
+                try {
+                    if (!('serial' in navigator)) {
+                        alert('La API Web Serial no está disponible en este navegador. Usa Chrome/Edge con HTTPS o localhost.');
+                        return;
+                    }
+
+                    // 1. Solicita al usuario que seleccione un puerto (abre la ventana COM)
+                    selectedPort = await navigator.serial.requestPort();
+                    
+                    // 2. Abre el puerto con el Baud Rate (usar 115200 según solicitado)
+                    await selectedPort.open({ baudRate: 115200 });
+                    isSerialConnected = true;
+
+                    // 3. Actualiza la interfaz a Conectado
+                    if (button) {
+                        button.textContent = '✅ Desconectar';
+                        button.classList.replace('bg-libyan-red', 'bg-libyan-green');
+                        button.classList.replace('hover:bg-red-700', 'hover:bg-green-700');
+                    }
+
+                    if (statusText) {
+                        statusText.textContent = 'Conectado';
+                        statusText.classList.replace('text-red-400', 'text-libyan-green');
+                    }
+
+                    console.log('Puerto COM conectado exitosamente.');
+
+                    // Opcional: Iniciar la lectura de datos para recibir mensajes del Arduino
+                    // readSerialData(); 
+
+                } catch (error) {
+                    // Manejar la cancelación por el usuario o errores de apertura
+                    if (error && error.name !== 'NotFoundError') {
+                        alert('Error al conectar el puerto: ' + (error.message || error));
+                    }
+                    selectedPort = undefined;
+                }
+            }
+        }
+
+        /**
+         * Función genérica para enviar datos (cadenas de texto) al Arduino.
+         * @param {string} command - El comando que se enviará al Arduino (ej: "Mover A1-A2\n").
+         */
+        async function sendSerialData(command) {
+            if (!isSerialConnected || !selectedPort || !selectedPort.writable) {
+                console.warn('Puerto serial no conectado. Usando WebSocket o ignorando comando.');
+                return false;
+            }
+
+            try {
+                const writer = selectedPort.writable.getWriter();
+                const encoder = new TextEncoder();
+                
+                // El Arduino recibirá el comando como una cadena de texto
+                await writer.write(encoder.encode(command));
+                writer.releaseLock();
+                // Registrar en el historial que se envió por serial (115200)
+                try { addToLog(`📡 [SERIAL 115200] ${command.trim()}`); } catch(e) { console.log('Log add failed', e); }
+                return true;
+            } catch (error) {
+                console.error('Error al enviar datos seriales: ', error);
+                return false;
+            }
+        }
+        
+        // Tablero inicial con piezas en posición estándar
+        let initialBoardState = [
+            ['♜', '♞', '♝', '♛', '♚', '♝', '♞', '♜'],
+            ['♟', '♟', '♟', '♟', '♟', '♟', '♟', '♟'],
+            ['', '', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '', ''],
+            ['♙', '♙', '♙', '♙', '♙', '♙', '♙', '♙'],
+            ['♖', '♘', '♗', '♕', '♔', '♗', '♘', '♖']
+        ];
+
+        let boardState = [...initialBoardState.map(row => [...row])];
+
+        // Desafíos y ejercicios
+        const challenges = {
+            pawn: [
+                {
+                    question: "¿A cuántas casillas puede avanzar un peón en su primer movimiento?",
+                    options: ["1 casilla", "2 casillas", "1 o 2 casillas", "3 casillas"],
+                    correct: 2,
+                    hint: "Los peones tienen un movimiento especial en su primera jugada",
+                    points: 10
+                },
+                {
+                    question: "¿Cómo captura un peón?",
+                    options: ["Hacia adelante", "En diagonal", "Hacia los lados", "Hacia atrás"],
+                    correct: 1,
+                    hint: "Los peones capturan diferente a como se mueven",
+                    points: 15
+                }
+            ],
+            rook: [
+                {
+                    question: "¿En qué direcciones puede moverse la torre?",
+                    options: ["Solo horizontal", "Solo vertical", "Horizontal y vertical", "En diagonal"],
+                    correct: 2,
+                    hint: "La torre se mueve en líneas rectas",
+                    points: 15
+                }
+            ],
+            knight: [
+                {
+                    question: "¿Cuál es la forma del movimiento del caballo?",
+                    options: ["Línea recta", "Diagonal", "Forma de L", "En círculo"],
+                    correct: 2,
+                    hint: "El caballo tiene un movimiento muy especial y único",
+                    points: 20
+                }
+            ]
+        };
+
+        // Sistema de logros
+        const achievements = {
+            first_piece: { name: "Primera Pieza", description: "Aprendiste tu primera pieza", icon: "🎯", points: 5 },
+            speed_learner: { name: "Aprendiz Rápido", description: "Completaste 3 lecciones seguidas", icon: "⚡", points: 25 },
+            perfectionist: { name: "Perfeccionista", description: "Respondiste 5 desafíos sin errores", icon: "💎", points: 50 },
+            chess_master: { name: "Maestro del Ajedrez", description: "Completaste todas las lecciones", icon: "👑", points: 100 }
+        };
+
+        // Configuración de piezas y sus movimientos
+        const pieceData = {
+            pawn: {
+                name: 'Peón',
+                symbol: '♟',
+                points: 10,
+                tts: 'El peón se mueve hacia adelante una casilla. Si es su primer movimiento, puede avanzar dos casillas. Para capturar, se mueve en diagonal hacia la casilla del adversario.',
+                moves: (row, col) => {
+                    const moves = [];
+                    if (row < 7) moves.push([row + 1, col]);
+                    if (row === 1) moves.push([row + 2, col]);
+                    if (row < 7 && col > 0) moves.push([row + 1, col - 1]);
+                    if (row < 7 && col < 7) moves.push([row + 1, col + 1]);
+                    return moves;
+                }
+            },
+            rook: {
+                name: 'Torre',
+                symbol: '♜',
+                points: 15,
+                tts: 'La torre se desplaza en línea recta: hacia delante, atrás o a los lados. Puede recorrer muchas casillas hasta chocar con otra pieza.',
+                moves: (row, col) => {
+                    const moves = [];
+                    for (let i = 0; i < 8; i++) {
+                        if (i !== row) moves.push([i, col]);
+                        if (i !== col) moves.push([row, i]);
+                    }
+                    return moves;
+                }
+            },
+            knight: {
+                name: 'Caballo',
+                symbol: '♞',
+                points: 20,
+                tts: 'El caballo salta en forma de L: dos casillas en una dirección y una casilla a la derecha o izquierda. Puede saltar sobre otras piezas.',
+                moves: (row, col) => {
+                    const moves = [];
+                    const knightMoves = [[-2,-1], [-2,1], [-1,-2], [-1,2], [1,-2], [1,2], [2,-1], [2,1]];
+                    knightMoves.forEach(([dr, dc]) => {
+                        const newRow = row + dr;
+                        const newCol = col + dc;
+                        if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8) {
+                            moves.push([newRow, newCol]);
+                        }
+                    });
+                    return moves;
+                }
+            },
+            bishop: {
+                name: 'Alfil',
+                symbol: '♝',
+                points: 15,
+                tts: 'El alfil se mueve diagonalmente, siempre en el mismo color de casilla en el que empezó. Recorre tantas casillas como necesite hasta chocar con otra pieza.',
+                moves: (row, col) => {
+                    const moves = [];
+                    for (let i = 1; i < 8; i++) {
+                        if (row + i < 8 && col + i < 8) moves.push([row + i, col + i]);
+                        if (row + i < 8 && col - i >= 0) moves.push([row + i, col - i]);
+                        if (row - i >= 0 && col + i < 8) moves.push([row - i, col + i]);
+                        if (row - i >= 0 && col - i >= 0) moves.push([row - i, col - i]);
+                    }
+                    return moves;
+                }
+            },
+            queen: {
+                name: 'Reina',
+                symbol: '♛',
+                tts: 'La reina puede moverse como la torre y como el alfil: en línea recta o en diagonal. Es la pieza más poderosa.',
+                moves: (row, col) => {
+                    const moves = [];
+                    // Combinar movimientos de torre y alfil
+                    for (let i = 0; i < 8; i++) {
+                        if (i !== row) moves.push([i, col]);
+                        if (i !== col) moves.push([row, i]);
+                    }
+                    for (let i = 1; i < 8; i++) {
+                        if (row + i < 8 && col + i < 8) moves.push([row + i, col + i]);
+                        if (row + i < 8 && col - i >= 0) moves.push([row + i, col - i]);
+                        if (row - i >= 0 && col + i < 8) moves.push([row - i, col + i]);
+                        if (row - i >= 0 && col - i >= 0) moves.push([row - i, col - i]);
+                    }
+                    return moves;
+                }
+            },
+            king: {
+                name: 'Rey',
+                symbol: '♚',
+                tts: 'El rey se mueve una casilla en cualquier dirección. Hay una jugada especial llamada enroque, donde el rey y la torre se mueven juntos para proteger al rey.',
+                moves: (row, col) => {
+                    const moves = [];
+                    for (let dr = -1; dr <= 1; dr++) {
+                        for (let dc = -1; dc <= 1; dc++) {
+                            if (dr === 0 && dc === 0) continue;
+                            const newRow = row + dr;
+                            const newCol = col + dc;
+                            if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8) {
+                                moves.push([newRow, newCol]);
+                            }
+                        }
+                    }
+                    return moves;
+                }
+            }
+        };
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeChessBoard();
+            initializeEventListeners();
+            initializeWebSocket();
+            updateControlValues();
+            loadPlayerProgress();
+            updateProgressDisplay();
+            updateLessonStates();
+
+            // Tour starts automatically on page load
+            setTimeout(() => {
+                startTour();
+            }, 1000);
+        });
+
+        // Crear tablero de ajedrez
+        function initializeChessBoard() {
+            const board = document.getElementById('chess-board');
+            board.innerHTML = '';
+            
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const square = document.createElement('div');
+                    square.className = `chess-square ${(row + col) % 2 === 0 ? 'light' : 'dark'}`;
+                    square.dataset.row = row;
+                    square.dataset.col = col;
+                    square.addEventListener('click', handleSquareClick);
+                    
+                    // Agregar pieza si existe en el estado del tablero
+                    if (boardState[row][col]) {
+                        square.textContent = boardState[row][col];
+                    }
+                    
+                    board.appendChild(square);
+                }
+            }
+        }
+
+        // Event listeners
+        function initializeEventListeners() {
+            // Lesson cards
+            document.querySelectorAll('.lesson-card').forEach(card => {
+                card.addEventListener('click', function() {
+                    if (!this.classList.contains('locked')) {
+                        selectPiece(this.dataset.piece);
+                    }
+                });
+            });
+
+            // Mode buttons
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    switchMode(this.id.replace('mode-', ''));
+                });
+            });
+
+            // Botones principales
+            document.getElementById('play-animation').addEventListener('click', playAnimation);
+            document.getElementById('execute-robot').addEventListener('click', executeRobotMove);
+            document.getElementById('repeat-explanation').addEventListener('click', repeatExplanation);
+            document.getElementById('tts-toggle').addEventListener('click', toggleTTS);
+
+            // Challenge buttons
+            document.getElementById('challenge-hint').addEventListener('click', showChallengeHint);
+            document.getElementById('challenge-skip').addEventListener('click', skipChallenge);
+
+            // Chat
+            document.getElementById('chat-form').addEventListener('submit', handleChatSubmit);
+
+            // Modal
+            document.getElementById('teacher-confirmation').addEventListener('change', function() {
+                document.getElementById('confirm-execution').disabled = !this.checked;
+            });
+            document.getElementById('cancel-execution').addEventListener('click', closeConfirmationModal);
+            document.getElementById('confirm-execution').addEventListener('click', confirmExecution);
+
+            // Controles (registrar solo si existen para evitar errores si no están en el DOM)
+            const speedControl = document.getElementById('speed-control');
+            const gripControl = document.getElementById('grip-control');
+            if (speedControl) speedControl.addEventListener('input', updateControlValues);
+            if (gripControl) gripControl.addEventListener('input', updateControlValues);
+
+            // AÑADIR EL ESCUCHADOR DE EVENTOS PARA EL BOTÓN SERIAL (si existe)
+            const connectBtn = document.getElementById('serial-connect-btn');
+            if (connectBtn) {
+                connectBtn.addEventListener('click', toggleSerialConnection);
+            }
+
+            // Botón para generar reporte: buscar usuario activo y descargar reporte
+            const reportBtn = document.getElementById('generate-report-btn');
+            if (reportBtn) {
+                reportBtn.addEventListener('click', async function() {
+                    addToLog('Solicitud de reporte iniciada.');
+
+                    const name = await getActiveStudentName();
+                    if (!name) {
+                        showNotification('No se encontró un estudiante activo. Vuelve a la página principal e ingresa un nombre.', 'error');
+                        return;
+                    }
+
+                    showNotification(`Generando reporte para ${name}...`, 'success');
+
+                    const student = await fetchStudentData(name);
+                    if (!student) {
+                        showNotification('No se pudo obtener la información del estudiante.', 'error');
+                        return;
+                    }
+
+                    generateReportForStudent(student);
+                });
+            }
+
+            // Tour auto-starts after 1s delay; no manual button needed
+        }
+
+        // WebSocket para comunicación con el robot
+        function initializeWebSocket() {
+            // Simulación de WebSocket (en producción usar URL real)
+            ws = {
+                send: function(data) {
+                    console.log('Enviando al robot:', data);
+                    // Simular respuesta del robot
+                    setTimeout(() => {
+                        const msg = JSON.parse(data);
+                        if (msg.type === 'prepare_move') {
+                            handleRobotMessage({
+                                type: 'prepare_move_response',
+                                id: msg.id,
+                                ok: true,
+                                warnings: []
+                            });
+                        }
+                    }, 500);
+                }
+            };
+        }
+
+        // Iniciar tour de pieza
+        function startPieceTour(pieceType) {
+            // Hacer scroll al tablero
+            const board = document.getElementById('chess-board');
+            board.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            // Seleccionar pieza
+            selectPiece(pieceType);
+
+            // Iniciar tour específico de la pieza después de un delay
+            setTimeout(() => {
+                startPieceSpecificTour(pieceType);
+            }, 500);
+        }
+
+        // Seleccionar pieza para tutorial
+        function selectPiece(pieceType, addPoints = true) {
+            currentPiece = pieceType;
+
+            // Hacer scroll al centro de la página (tablero)
+            const board = document.getElementById('chess-board');
+            board.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            // Actualizar UI
+            document.querySelectorAll('.lesson-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            document.querySelector(`[data-piece="${pieceType}"]`).classList.add('active');
+
+            // Limpiar selección previa y tablero
+            clearSelection();
+            clearBoard();
+
+            // Colocar pieza en el centro del tablero con animación
+            const initialRow = 3;
+            const initialCol = 3;
+            clearBoard();
+            placePieceOnBoard(initialRow, initialCol, pieceData[pieceType].symbol);
+
+            // Marcar la casilla como seleccionada y guardar la posición actual
+            selectedSquare = { row: initialRow, col: initialCol };
+            const startSquare = document.querySelector(`[data-row="${initialRow}"][data-col="${initialCol}"]`);
+            if (startSquare) startSquare.classList.add('selected');
+
+            // Mostrar movimientos válidos para la pieza en su posición central
+            showPossibleMoves(initialRow, initialCol);
+
+            // Agregar animación a la pieza
+            const square = document.querySelector(`[data-row="${initialRow}"][data-col="${initialCol}"]`);
+            if (square) {
+                square.classList.add('piece-animation');
+                setTimeout(() => square.classList.remove('piece-animation'), 1500);
+            }
+
+            // Agregar mensaje al chat
+            const welcomeMessage = currentMode === 'tutorial'
+                ? `Has seleccionado el ${pieceData[pieceType].name}. ${pieceData[pieceType].tts}`
+                : currentMode === 'quiz'
+                ? `¡Perfecto! Ahora responde el desafío sobre el ${pieceData[pieceType].name}.`
+                : `Experimenta libremente con el ${pieceData[pieceType].name}. Haz clic en el tablero para ver sus movimientos.`;
+
+            addChatMessage(welcomeMessage, 'assistant');
+
+            // Reproducir explicación por voz
+            if (ttsEnabled) {
+                speak(welcomeMessage);
+            }
+
+            // En modo tutorial, dar puntos por explorar (solo si addPoints es true)
+            if (addPoints && currentMode === 'tutorial') {
+                addExperience(2, 'explorar movimientos');
+
+                // Completar lección después de varios clics
+                const clickCount = parseInt(localStorage.getItem(`clicks_${currentPiece}`) || '0') + 1;
+                localStorage.setItem(`clicks_${currentPiece}`, clickCount.toString());
+
+                if (clickCount >= 3) {
+                    completeLesson(currentPiece);
+                    localStorage.removeItem(`clicks_${currentPiece}`);
+                }
+            }
+
+            // Iniciar desafío si estamos en modo quiz
+            if (currentMode === 'quiz' && challenges[pieceType]) {
+                setTimeout(() => startChallenge(), 1000);
+            }
+
+            // Log
+            addToLog(`📚 ${currentMode === 'tutorial' ? 'Tutorial' : currentMode === 'quiz' ? 'Desafío' : 'Práctica'} seleccionado: ${pieceData[pieceType].name}`);
+        }
+
+        // Tour específico para cada pieza
+        function startPieceSpecificTour(pieceType) {
+            const driverObj = driver({
+                showProgress: false,
+                steps: [
+                    {
+                        element: '#chess-board',
+                        popover: {
+                            title: `Aprende: ${pieceData[pieceType].name}`,
+                            description: pieceData[pieceType].tts
+                        }
+                    }
+                ]
+            });
+
+            driverObj.drive();
+        }
+
+        // Manejar click en casilla del tablero
+        function handleSquareClick(event) {
+            const row = parseInt(event.target.dataset.row);
+            const col = parseInt(event.target.dataset.col);
+            
+            // Modo Práctica Libre
+            if (currentMode === 'practice' && currentPlayer === 'user' && !gameOver) {
+                handlePracticeClick(row, col, event.target);
+                return;
+            }
+            
+            // Modo Control Directo
+            if (currentMode === 'control') {
+                handleControlModeClick(row, col, event.target);
+                return;
+            }
+            
+            // Otros modos (tutorial, quiz)
+            if (!currentPiece) {
+                addChatMessage('Primero selecciona una pieza de la lista de la izquierda para aprender cómo se mueve.', 'assistant');
+                return;
+            }
+
+            // Si estamos en modo quiz, mantener la lógica existente
+            if (currentMode === 'quiz' && currentChallenge) {
+                // En quiz se evalúa la selección
+                selectedSquare = { row, col };
+                event.target.classList.add('selected');
+                const isCorrect = checkChallengeAnswer(selectedSquare);
+                if (isCorrect) {
+                    showPossibleMoves(row, col);
+                    return;
+                }
+                return;
+            }
+
+            // Modo Tutorial: sólo permitir mover a casillas marcadas (valid-move / capture-move)
+            if (currentMode === 'tutorial') {
+                // Debe existir una pieza ya colocada (selectPiece coloca la pieza y setea selectedSquare)
+                if (!selectedSquare) {
+                    addChatMessage('Selecciona primero una lección para que la pieza aparezca en el tablero.', 'assistant');
+                    return;
+                }
+
+                const clickedSquare = event.target;
+
+                // Si la casilla es una de las válidas, mover la pieza allí
+                if (clickedSquare.classList.contains('valid-move') || clickedSquare.classList.contains('capture-move')) {
+                    clearSelection();
+                    clearBoard();
+                    placePieceOnBoard(row, col, pieceData[currentPiece].symbol);
+                    selectedSquare = { row, col };
+                    clickedSquare.classList.add('selected');
+                    showPossibleMoves(row, col);
+
+                    // Experiencia y logging igual que antes
+                    addExperience(2, 'explorar movimientos');
+                    const clickCount = parseInt(localStorage.getItem(`clicks_${currentPiece}`) || '0') + 1;
+                    localStorage.setItem(`clicks_${currentPiece}`, clickCount.toString());
+                    if (clickCount >= 3) {
+                        completeLesson(currentPiece);
+                        localStorage.removeItem(`clicks_${currentPiece}`);
+                    }
+
+                    addToLog(`🎯 Movimiento tutorial: ${String.fromCharCode(97 + col)}${8 - row}`);
+                } else {
+                    addChatMessage('Haz clic en una casilla marcada en verde para mover la pieza.', 'assistant');
+                    showNotification('Selecciona una casilla marcada en verde', 'error');
+                }
+
+                return;
+            }
+        }
+
+        // Mostrar movimientos posibles
+        function showPossibleMoves(row, col) {
+            const moves = pieceData[currentPiece].moves(row, col);
+            
+            moves.forEach(([moveRow, moveCol]) => {
+                const square = document.querySelector(`[data-row="${moveRow}"][data-col="${moveCol}"]`);
+                if (square) {
+                    square.classList.add('valid-move');
+                }
+            });
+        }
+
+        // Limpiar selección y movimientos
+        function clearSelection() {
+            document.querySelectorAll('.chess-square').forEach(square => {
+                square.classList.remove('selected', 'valid-move', 'capture-move');
+            });
+        }
+
+        // Limpiar tablero
+        function clearBoard() {
+            document.querySelectorAll('.chess-square').forEach(square => {
+                square.textContent = '';
+            });
+        }
+
+        // Colocar pieza en el tablero
+        function placePieceOnBoard(row, col, symbol) {
+            const square = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+            if (square) {
+                square.textContent = symbol;
+            }
+        }
+
+        // Reproducir animación
+        function playAnimation() {
+            if (!currentPiece || !selectedSquare) {
+                addChatMessage('Selecciona una pieza y haz clic en una casilla del tablero para ver la animación.', 'assistant');
+                return;
+            }
+
+            addToLog('🎬 Reproduciendo animación...');
+            addChatMessage(`Observa cómo se mueve el ${pieceData[currentPiece].name} desde su posición actual.`, 'assistant');
+            
+            // Simular animación con efectos visuales
+            setTimeout(() => {
+                addToLog('✅ Animación completada');
+            }, 2000);
+        }
+
+        // Ejecutar movimiento en el robot
+        function executeRobotMove() {
+            if (!currentPiece || !selectedSquare) {
+                addChatMessage('Selecciona una pieza y una casilla antes de ejecutar en el robot.', 'assistant');
+                return;
+            }
+
+            if (isExecuting) {
+                addChatMessage('Ya hay una ejecución en progreso. Espera a que termine.', 'assistant');
+                return;
+            }
+
+            // Preparar movimiento
+            const move = {
+                from: 'e2', // Posición inicial simulada
+                to: `${String.fromCharCode(97 + selectedSquare.col)}${8 - selectedSquare.row}`
+            };
+
+            currentMove = move;
+            
+            // Mostrar modal de confirmación
+            showConfirmationModal(move);
+        }
+
+        // Mostrar modal de confirmación
+        function showConfirmationModal(move) {
+            document.getElementById('move-description').textContent = `${pieceData[currentPiece].name} de ${move.from} a ${move.to}`;
+            document.getElementById('confirmation-modal').classList.remove('hidden');
+            document.getElementById('teacher-confirmation').checked = false;
+            document.getElementById('confirm-execution').disabled = true;
+        }
+
+        // Cerrar modal de confirmación
+        function closeConfirmationModal() {
+            document.getElementById('confirmation-modal').classList.add('hidden');
+            currentMove = null;
+        }
+
+        // Confirmar ejecución
+        function confirmExecution() {
+            if (!currentMove) return;
+            // capture currentMove before closing modal (closeConfirmationModal clears currentMove)
+            const moveToSend = currentMove;
+            closeConfirmationModal();
+            isExecuting = true;
+            
+            // Si estamos en modo control, ejecutar el movimiento en el tablero
+            if (currentMode === 'control') {
+                // Mostrar countdown
+                showCountdown(() => {
+                    executeControlMove();
+
+                    // Enviar comando al robot usando la copia moveToSend
+                    const options = {
+                        speed: parseFloat(getControlValue('speed-control', '0.5')),
+                        grip: parseFloat(getControlValue('grip-control', '0.5'))
+                    };
+
+                    prepareMove(moveToSend, options);
+                    addToLog('🤖 Enviando comando al robot...');
+                });
+            } else {
+                // Modo normal (tutorial, practice, quiz)
+                showCountdown(() => {
+                    // Enviar comando al robot
+                    const options = {
+                        speed: parseFloat(getControlValue('speed-control', '0.5')),
+                        grip: parseFloat(getControlValue('grip-control', '0.5'))
+                    };
+                    
+                    prepareMove(currentMove, options);
+                    addToLog('🤖 Enviando comando al robot...');
+                    addChatMessage('El robot está ejecutando el movimiento. ¡Observa con atención!', 'assistant');
+                });
+            }
+        }
+
+        // Mostrar countdown
+        function showCountdown(callback) {
+            const overlay = document.getElementById('countdown-overlay');
+            const number = document.getElementById('countdown-number');
+            let count = 3;
+            
+            overlay.classList.remove('hidden');
+            
+            const countInterval = setInterval(() => {
+                number.textContent = count;
+                number.style.animation = 'none';
+                setTimeout(() => number.style.animation = 'countdown-pulse 1s ease-in-out', 10);
+                
+                count--;
+                
+                if (count < 0) {
+                    clearInterval(countInterval);
+                    overlay.classList.add('hidden');
+                    callback();
+                }
+            }, 1000);
+        }
+
+        // Preparar movimiento en el robot
+        function prepareMove(move, options = {}) {
+            const id = crypto.randomUUID();
+                    const payload = {
+                type: 'prepare_move',
+                id: id,
+                move: move,
+                options: options
+            };
+
+            ws.send(JSON.stringify(payload));
+
+            // Send to serial if connected
+            if (isSerialConnected) {
+                const command = `MOVER PIEZA ${move.from} ${move.to}\n`;
+                sendSerialData(command);
+                addToLog(`📡 Comando serial enviado: ${command.trim()}`);
+            }
+
+            return id;
+        }
+
+        // Manejar mensajes del robot
+        function handleRobotMessage(msg) {
+            if (msg.type === 'prepare_move_response') {
+                if (msg.ok) {
+                    executeMove(msg.id, currentMove);
+                } else {
+                    addToLog('❌ Error en preparación: ' + (msg.warnings || ['Movimiento no permitido']).join(', '));
+                    isExecuting = false;
+                }
+            } else if (msg.type === 'execute_result') {
+                addToLog(`✅ Ejecución ${msg.status}`);
+                isExecuting = false;
+                if (msg.status === 'completed') {
+                    addChatMessage('¡Movimiento completado! ¿Quieres probar con otra pieza?', 'assistant');
+                }
+            }
+        }
+
+        // Ejecutar movimiento
+        function executeMove(id, move) {
+            const payload = {
+                type: 'execute_move',
+                id: id,
+                move: move,
+                options: {
+                    speed: parseFloat(getControlValue('speed-control', '0.5')),
+                    grip: parseFloat(getControlValue('grip-control', '0.5')),
+                    retry: 1
+                }
+            };
+            
+            ws.send(JSON.stringify(payload));
+            
+            // Simular progreso
+            setTimeout(() => handleRobotMessage({ type: 'execute_result', id: id, status: 'completed' }), 3000);
+        }
+
+        // Parada de emergencia
+        function emergencyStop() {
+            if (ws) {
+                ws.send(JSON.stringify({ type: 'emergency_stop', reason: 'user_pressed_button' }));
+            }
+            isExecuting = false;
+            addToLog('🛑 PARADA DE EMERGENCIA ACTIVADA');
+            addChatMessage('Parada de emergencia activada. Todas las operaciones han sido detenidas.', 'assistant');
+        }
+
+        // Repetir explicación
+        function repeatExplanation() {
+            if (!currentPiece) {
+                addChatMessage('Selecciona una pieza primero para escuchar su explicación.', 'assistant');
+                return;
+            }
+            
+            const explanation = pieceData[currentPiece].tts;
+            addChatMessage(`Te repito la explicación del ${pieceData[currentPiece].name}: ${explanation}`, 'assistant');
+            
+            if (ttsEnabled) {
+                speak(explanation);
+            }
+        }
+
+        // Toggle TTS
+        function toggleTTS() {
+            ttsEnabled = !ttsEnabled;
+            const button = document.getElementById('tts-toggle');
+            button.textContent = ttsEnabled ? '🎤' : '🔇';
+            button.title = ttsEnabled ? 'Desactivar voz' : 'Activar voz';
+            
+            addToLog(`🔊 Voz ${ttsEnabled ? 'activada' : 'desactivada'}`);
+        }
+
+        // Función TTS
+        function speak(text, options = {}) {
+            if (!ttsEnabled || !('speechSynthesis' in window)) return;
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = options.lang || 'es-ES';
+            utterance.rate = options.rate || 0.95;
+            utterance.pitch = options.pitch || 0.8;
+            
+            // Buscar voz masculina en español
+            const voices = speechSynthesis.getVoices();
+            const maleVoice = voices.find(voice => 
+                voice.lang.includes('es') && 
+                (voice.name.toLowerCase().includes('male') || 
+                 voice.name.toLowerCase().includes('masculin') ||
+                 voice.name.toLowerCase().includes('diego') ||
+                 voice.name.toLowerCase().includes('jorge'))
+            );
+            
+            if (maleVoice) {
+                utterance.voice = maleVoice;
+            }
+            
+            // Mostrar indicador de voz
+            const indicator = document.getElementById('voice-indicator');
+            indicator.classList.remove('hidden');
+            
+            utterance.onend = () => {
+                indicator.classList.add('hidden');
+            };
+            
+            speechSynthesis.cancel();
+            speechSynthesis.speak(utterance);
+        }
+
+        // Manejar envío de chat
+        async function handleChatSubmit(event) {
+            event.preventDefault();
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+
+            if (!message) return;
+
+            addChatMessage(message, 'user');
+            input.value = '';
+
+            // Mostrar indicador de escritura
+            showTypingIndicator();
+
+            try {
+                const response = await getAIResponse(message);
+                hideTypingIndicator();
+                addChatMessage(response, 'assistant');
+
+                if (ttsEnabled) {
+                    speak(response);
+                }
+            } catch (error) {
+                hideTypingIndicator();
+                console.error('Error al obtener respuesta del AI:', error);
+                addChatMessage('Lo siento, hubo un error al procesar tu mensaje. Inténtalo de nuevo.', 'assistant');
+            }
+        }
+
+        // Obtener respuesta del AI usando Hugging Face
+        async function getAIResponse(userMessage) {
+            const systemPrompt = `Eres un maestro de ajedrez amigable y paciente llamado "Maestro Robot". Tu objetivo es enseñar ajedrez de manera divertida y educativa.
+
+Contexto actual:
+- Estás ayudando a un estudiante a aprender ajedrez
+- El estudiante puede estar aprendiendo sobre piezas específicas: peón, torre, alfil, caballo, reina, rey
+- Puedes explicar movimientos, estrategias básicas, reglas del ajedrez
+- Mantén un tono motivador y positivo
+- Responde en español, ya que el estudiante habla español
+- Si no sabes algo específico sobre ajedrez, admítelo y sugiere recursos adicionales
+
+Instrucciones importantes:
+- Sé conciso pero informativo
+- Usa ejemplos cuando sea apropiado
+- Anima al estudiante a practicar
+- Si preguntan sobre algo no relacionado con ajedrez, redirígelo amablemente al tema
+- Mantén respuestas de 2-4 oraciones para no abrumar al estudiante
+
+Mensaje del estudiante: ${userMessage}`;
+
+            try {
+                const response = await fetch(HF_API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${HF_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model: HF_MODEL_NAME,
+                        messages: [
+                            {
+                                role: 'system',
+                                content: systemPrompt
+                            },
+                            {
+                                role: 'user',
+                                content: userMessage
+                            }
+                        ],
+                        max_tokens: 300,
+                        temperature: 0.7,
+                        top_p: 0.9
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (data.choices && data.choices[0] && data.choices[0].message) {
+                    return data.choices[0].message.content.trim();
+                } else {
+                    throw new Error('Respuesta inesperada del API');
+                }
+            } catch (error) {
+                console.error('Error en getAIResponse:', error);
+                // Fallback a respuestas predefinidas si falla el API
+                return getFallbackResponse(userMessage);
+            }
+        }
+
+        // Respuestas de respaldo en caso de que falle el API
+        function getFallbackResponse(userMessage) {
+            const lowerMessage = userMessage.toLowerCase();
+            let response = '';
+
+            if (lowerMessage.includes('caballo')) {
+                response = 'El caballo se mueve en L: dos casillas en una dirección y una perpendicular. Puede saltar sobre otras piezas. ¿Quieres ver una animación?';
+            } else if (lowerMessage.includes('peón')) {
+                response = 'El peón avanza hacia adelante una casilla, pero captura en diagonal. En su primer movimiento puede avanzar dos casillas. ¿Te muestro cómo?';
+            } else if (lowerMessage.includes('torre')) {
+                response = 'La torre se mueve en líneas rectas: horizontal y vertical, tantas casillas como quiera. ¡Es muy poderosa para controlar filas y columnas!';
+            } else if (lowerMessage.includes('alfil')) {
+                response = 'El alfil se mueve solo en diagonal, siempre en el mismo color de casilla. Los dos alfiles controlan diagonales diferentes.';
+            } else if (lowerMessage.includes('reina')) {
+                response = 'La reina es la pieza más poderosa. Combina los movimientos de torre y alfil: puede ir a cualquier dirección en línea recta.';
+            } else if (lowerMessage.includes('rey')) {
+                response = 'El rey se mueve una casilla en cualquier dirección. Es la pieza más importante, ¡hay que protegerlo! También puede hacer enroque.';
+            } else if (lowerMessage.includes('enroque') || lowerMessage.includes('castling')) {
+                response = 'El enroque es un movimiento especial del rey y la torre. El rey se mueve dos casillas hacia la torre, y la torre salta al otro lado. Debe ser el primer movimiento de ambas piezas.';
+            } else if (lowerMessage.includes('jaque') || lowerMessage.includes('check')) {
+                response = '¡Jaque! Significa que el rey está siendo atacado. Debes mover el rey, capturar la pieza atacante o bloquear el ataque. Si no puedes, es jaque mate.';
+            } else {
+                response = '¡Excelente pregunta! Selecciona una pieza de la izquierda para aprender más sobre ella, o pregúntame sobre reglas específicas del ajedrez.';
+            }
+
+            return response;
+        }
+
+        // Mostrar indicador de escritura
+        function showTypingIndicator() {
+            const chatWindow = document.getElementById('chat-window');
+            const typingDiv = document.createElement('div');
+            typingDiv.id = 'typing-indicator';
+            typingDiv.className = 'chat-bubble assistant p-3';
+            typingDiv.innerHTML = `
+                <div class="typing-indicator">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            `;
+            chatWindow.appendChild(typingDiv);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        // Ocultar indicador de escritura
+        function hideTypingIndicator() {
+            const typingDiv = document.getElementById('typing-indicator');
+            if (typingDiv) {
+                typingDiv.remove();
+            }
+        }
+
+        // Agregar mensaje al chat
+        function addChatMessage(message, sender) {
+            const chatWindow = document.getElementById('chat-window');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-bubble ${sender} p-3`;
+            messageDiv.textContent = message;
+            
+            chatWindow.appendChild(messageDiv);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        // Agregar al log
+        function addToLog(message) {
+            const log = document.getElementById('execution-log');
+            const logEntry = document.createElement('div');
+            logEntry.textContent = `${new Date().toLocaleTimeString()} - ${message}`;
+            
+            log.appendChild(logEntry);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        // Helper para leer valores de control de forma segura
+        function getControlValue(id, defaultValue = '0.5') {
+            const el = document.getElementById(id);
+            if (!el) return defaultValue;
+            return el.value;
+        }
+
+        // Actualizar valores de controles
+        function updateControlValues() {
+            const speedValue = getControlValue('speed-control', '0.5');
+            const gripValue = getControlValue('grip-control', '0.5');
+
+            const speedLabel = document.getElementById('speed-value');
+            const gripLabel = document.getElementById('grip-value');
+            if (speedLabel) speedLabel.textContent = speedValue;
+            if (gripLabel) gripLabel.textContent = gripValue;
+        }
+
+        // === NUEVAS FUNCIONES DIDÁCTICAS ===
+
+        // Cargar progreso del jugador
+        function loadPlayerProgress() {
+            const saved = localStorage.getItem('chessRobotProgress');
+            if (saved) {
+                playerProgress = { ...playerProgress, ...JSON.parse(saved) };
+            }
+        }
+
+        // Guardar progreso del jugador
+        function savePlayerProgress() {
+            localStorage.setItem('chessRobotProgress', JSON.stringify(playerProgress));
+        }
+
+        // Actualizar display de progreso
+        function updateProgressDisplay() {
+            document.getElementById('total-points').textContent = playerProgress.totalPoints;
+            document.getElementById('current-level').textContent = playerProgress.level;
+            document.getElementById('current-exp').textContent = playerProgress.experience;
+            document.getElementById('next-level-exp').textContent = playerProgress.level * 100;
+            document.getElementById('pieces-learned').textContent = playerProgress.piecesLearned;
+            document.getElementById('exercises-completed').textContent = playerProgress.exercisesCompleted;
+            document.getElementById('streak-count').textContent = playerProgress.streakCount;
+            
+            const progressPercent = (playerProgress.experience / (playerProgress.level * 100)) * 100;
+            document.getElementById('progress-bar').style.width = progressPercent + '%';
+        }
+
+        // Cambiar modo de aprendizaje
+        function switchMode(mode) {
+            currentMode = mode;
+            
+            // Actualizar UI de botones
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById(`mode-${mode}`).classList.add('active');
+            
+            // Limpiar estado anterior
+            clearSelection();
+            controlMode = {
+                selectedPiece: null,
+                fromSquare: null,
+                toSquare: null,
+                pendingMove: null
+            };
+            
+            // Reset practice mode state
+            if (practiceGameActive) {
+                endPracticeGame();
+            }
+            
+            // Mostrar/ocultar elementos según el modo
+            const challengePanel = document.getElementById('challenge-panel');
+            if (mode === 'quiz') {
+                challengePanel.classList.remove('hidden');
+                if (currentPiece && challenges[currentPiece]) {
+                    startChallenge();
+                }
+            } else {
+                challengePanel.classList.add('hidden');
+                if (challengeTimer) {
+                    clearInterval(challengeTimer);
+                    challengeTimer = null;
+                }
+            }
+            
+            // Configurar tablero según el modo
+            if (mode === 'control') {
+                // Mostrar tablero completo con todas las piezas
+                boardState = [...initialBoardState.map(row => [...row])];
+                initializeChessBoard();
+                addChatMessage('🎮 Modo Control Directo activado. Haz clic en una pieza para seleccionarla, luego en la casilla destino para moverla. El robot ejecutará tu movimiento.', 'assistant');
+            } else if (mode === 'practice') {
+                // Initialize practice game
+                startPracticeGame();
+                addChatMessage('💪 Modo Práctica Libre activado. Juega ajedrez contra el robot. Tú juegas con las blancas. Haz clic en una pieza tuya y luego en la casilla destino.', 'assistant');
+            } else {
+                // Limpiar tablero para otros modos
+                clearBoard();
+                addChatMessage(`Modo ${mode} activado. ${mode === 'tutorial' ? 'Selecciona una pieza de la izquierda para aprender.' : mode === 'quiz' ? 'Responde los desafíos para ganar puntos.' : 'Experimenta libremente con las piezas.'}`, 'assistant');
+            }
+            
+            addToLog(`📚 Modo cambiado a: ${mode}`);
+        }
+
+        // Actualizar estados de lecciones
+        function updateLessonStates() {
+            document.querySelectorAll('.lesson-card').forEach(card => {
+                const piece = card.dataset.piece;
+                const difficulty = parseInt(card.dataset.difficulty);
+                const statusIcon = card.querySelector('.lesson-status');
+                
+                if (playerProgress.completedLessons.includes(piece)) {
+                    card.classList.add('completed');
+                    statusIcon.textContent = '✅';
+                } else if (difficulty === 1 || playerProgress.completedLessons.length >= difficulty - 1) {
+                    card.classList.remove('locked');
+                    statusIcon.textContent = '🔓';
+                } else {
+                    card.classList.add('locked');
+                    statusIcon.textContent = '🔒';
+                }
+            });
+        }
+
+        // Agregar puntos y experiencia
+        function addExperience(points, reason) {
+            playerProgress.totalPoints += points;
+            playerProgress.experience += points;
+            
+            // Verificar subida de nivel
+            const requiredExp = playerProgress.level * 100;
+            if (playerProgress.experience >= requiredExp) {
+                playerProgress.level++;
+                playerProgress.experience -= requiredExp;
+                showNotification(`¡Subiste al nivel ${playerProgress.level}!`, 'achievement');
+                
+                if (ttsEnabled) {
+                    speak(`¡Felicidades! Has subido al nivel ${playerProgress.level}`);
+                }
+            }
+            
+            updateProgressDisplay();
+            savePlayerProgress();
+            showNotification(`+${points} puntos por ${reason}`, 'success');
+        }
+
+        // Completar lección
+        function completeLesson(piece) {
+            if (!playerProgress.completedLessons.includes(piece)) {
+                playerProgress.completedLessons.push(piece);
+                playerProgress.piecesLearned++;
+                
+                const points = pieceData[piece].points || 10;
+                addExperience(points, `aprender ${pieceData[piece].name}`);
+                
+                // Verificar logros
+                checkAchievements();
+                updateLessonStates();
+                
+                showNotification(`¡Completaste la lección del ${pieceData[piece].name}!`, 'achievement');
+            }
+        }
+
+        // Verificar logros
+        function checkAchievements() {
+            // Primer pieza
+            if (playerProgress.piecesLearned === 1 && !playerProgress.achievements.includes('first_piece')) {
+                unlockAchievement('first_piece');
+            }
+            
+            // Aprendiz rápido
+            if (playerProgress.piecesLearned === 3 && !playerProgress.achievements.includes('speed_learner')) {
+                unlockAchievement('speed_learner');
+            }
+            
+            // Maestro del ajedrez
+            if (playerProgress.piecesLearned === 6 && !playerProgress.achievements.includes('chess_master')) {
+                unlockAchievement('chess_master');
+            }
+        }
+
+        // Desbloquear logro
+        function unlockAchievement(achievementId) {
+            const achievement = achievements[achievementId];
+            if (achievement && !playerProgress.achievements.includes(achievementId)) {
+                playerProgress.achievements.push(achievementId);
+                addExperience(achievement.points, `logro: ${achievement.name}`);
+                
+                // Agregar al panel de logros
+                const container = document.getElementById('achievements-container');
+                if (container.children.length === 1 && container.children[0].textContent.includes('Completa lecciones')) {
+                    container.innerHTML = '';
+                }
+                
+                const achievementDiv = document.createElement('div');
+                achievementDiv.className = 'flex items-center p-2 bg-yellow-50 border border-yellow-200 rounded-lg';
+                achievementDiv.innerHTML = `
+                    <div class="text-2xl mr-3">${achievement.icon}</div>
+                    <div class="flex-1">
+                        <div class="font-semibold text-sm">${achievement.name}</div>
+                        <div class="text-xs text-gray-600">${achievement.description}</div>
+                    </div>
+                `;
+                container.appendChild(achievementDiv);
+                
+                showNotification(`🏆 ¡Logro desbloqueado: ${achievement.name}!`, 'achievement');
+                
+                if (ttsEnabled) {
+                    speak(`¡Felicidades! Has desbloqueado el logro ${achievement.name}`);
+                }
+            }
+        }
+
+        // Iniciar desafío
+        function startChallenge() {
+            if (!currentPiece || !challenges[currentPiece]) return;
+            
+            const piecesChallenges = challenges[currentPiece];
+            const randomChallenge = piecesChallenges[Math.floor(Math.random() * piecesChallenges.length)];
+            
+            currentChallenge = { ...randomChallenge, timeLeft: 30 };
+            
+            document.getElementById('challenge-question').textContent = randomChallenge.question;
+            document.getElementById('challenge-points').textContent = `+${randomChallenge.points} pts`;
+            document.getElementById('challenge-timer').textContent = currentChallenge.timeLeft;
+            
+            // Iniciar timer
+            challengeTimer = setInterval(() => {
+                currentChallenge.timeLeft--;
+                const timerElement = document.getElementById('challenge-timer');
+                timerElement.textContent = currentChallenge.timeLeft;
+                
+                if (currentChallenge.timeLeft <= 10) {
+                    timerElement.classList.add('warning');
+                }
+                
+                if (currentChallenge.timeLeft <= 0) {
+                    clearInterval(challengeTimer);
+                    challengeTimer = null;
+                    showNotification('¡Se acabó el tiempo!', 'error');
+                    document.getElementById('challenge-panel').classList.add('hidden');
+                }
+            }, 1000);
+        }
+
+        // Mostrar pista del desafío
+        function showChallengeHint() {
+            if (currentChallenge) {
+                addChatMessage(`💡 Pista: ${currentChallenge.hint}`, 'assistant');
+                if (ttsEnabled) {
+                    speak(currentChallenge.hint);
+                }
+            }
+        }
+
+        // Saltar desafío
+        function skipChallenge() {
+            if (challengeTimer) {
+                clearInterval(challengeTimer);
+                challengeTimer = null;
+            }
+            document.getElementById('challenge-panel').classList.add('hidden');
+            currentChallenge = null;
+        }
+
+        // Verificar respuesta del desafío
+        function checkChallengeAnswer(selectedSquare) {
+            if (!currentChallenge || currentMode !== 'quiz') return false;
+            
+            // Lógica simplificada: cualquier movimiento válido cuenta como correcto
+            const moves = pieceData[currentPiece].moves(selectedSquare.row, selectedSquare.col);
+            if (moves.length > 0) {
+                // Respuesta correcta
+                if (challengeTimer) {
+                    clearInterval(challengeTimer);
+                    challengeTimer = null;
+                }
+                
+                playerProgress.exercisesCompleted++;
+                playerProgress.streakCount++;
+                addExperience(currentChallenge.points, 'completar desafío');
+                
+                showNotification('¡Respuesta correcta!', 'success');
+                document.getElementById('challenge-panel').classList.add('hidden');
+                currentChallenge = null;
+                
+                return true;
+            }
+            
+            return false;
+        }
+
+        // Sistema de notificaciones
+        function showNotification(message, type = 'success') {
+            const container = document.getElementById('notifications-container');
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            
+            let icon = '✅';
+            if (type === 'achievement') icon = '🏆';
+            else if (type === 'error') icon = '❌';
+            
+            notification.innerHTML = `
+                <div class="flex items-center">
+                    <span class="text-lg mr-2">${icon}</span>
+                    <span class="text-sm font-medium">${message}</span>
+                </div>
+            `;
+            
+            container.appendChild(notification);
+            
+            // Auto-remove después de 4 segundos
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease-in forwards';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 4000);
+        }
+
+        // === FUNCIONES DEL MODO CONTROL DIRECTO ===
+
+        // Manejar clics en modo control directo
+        function handleControlModeClick(row, col, element) {
+            const piece = boardState[row][col];
+            
+            // Si no hay pieza seleccionada y hay una pieza en esta casilla
+            if (!controlMode.selectedPiece && piece) {
+                selectPieceForControl(row, col, element);
+            }
+            // Si hay una pieza seleccionada
+            else if (controlMode.selectedPiece) {
+                // Si hacemos clic en la misma pieza, deseleccionar
+                if (controlMode.fromSquare && controlMode.fromSquare.row === row && controlMode.fromSquare.col === col) {
+                    deselectPieceForControl();
+                }
+                // Si hacemos clic en otra casilla, intentar mover
+                else {
+                    attemptMoveInControl(row, col);
+                }
+            }
+            // Si no hay pieza seleccionada y no hay pieza en esta casilla
+            else {
+                addChatMessage('Selecciona una pieza primero haciendo clic en ella.', 'assistant');
+            }
+        }
+
+        // Seleccionar pieza para control
+        function selectPieceForControl(row, col, element) {
+            // Limpiar selección anterior
+            clearSelection();
+
+            const piece = boardState[row][col];
+
+            // Permitir seleccionar solo piezas negras en Control Directo
+            if (!isBlackPiece(piece)) {
+                addChatMessage('En Control Directo solo puedes seleccionar piezas negras.', 'assistant');
+                showNotification('Solo puedes seleccionar piezas negras en Control Directo', 'error');
+                return;
+            }
+
+            controlMode.selectedPiece = piece;
+            controlMode.fromSquare = { row, col };
+
+            // Marcar casilla como seleccionada
+            element.classList.add('selected');
+
+            // Mostrar movimientos válidos para esta pieza
+            showValidMovesForControlPiece(row, col);
+
+            const pieceName = getPieceName(controlMode.selectedPiece);
+            addChatMessage(`Has seleccionado ${pieceName} en ${getSquareName(row, col)}. Ahora haz clic en la casilla destino.`, 'assistant');
+            addToLog(`🎯 Pieza seleccionada: ${pieceName} en ${getSquareName(row, col)}`);
+        }
+
+        // Deseleccionar pieza para control
+        function deselectPieceForControl() {
+            clearSelection();
+            controlMode.selectedPiece = null;
+            controlMode.fromSquare = null;
+            addChatMessage('Pieza deseleccionada. Selecciona otra pieza para mover.', 'assistant');
+        }
+
+        // Intentar mover en modo control
+        function attemptMoveInControl(toRow, toCol) {
+            const fromRow = controlMode.fromSquare.row;
+            const fromCol = controlMode.fromSquare.col;
+            
+            // Verificar si el movimiento es válido (lógica básica)
+            if (isValidMove(fromRow, fromCol, toRow, toCol)) {
+                // Preparar el movimiento
+                const move = {
+                    from: getSquareName(fromRow, fromCol),
+                    to: getSquareName(toRow, toCol),
+                    piece: controlMode.selectedPiece,
+                    capture: boardState[toRow][toCol] !== ''
+                };
+                
+                controlMode.pendingMove = {
+                    fromRow, fromCol, toRow, toCol, move
+                };
+
+                // Si hay conexión serial, confirmar y ejecutar automáticamente
+                if (isSerialConnected) {
+                    // set global currentMove so confirmExecution can use it
+                    currentMove = move;
+                    confirmExecution();
+                    return;
+                }
+
+                // Mostrar confirmación (modo manual)
+                showControlMoveConfirmation(move);
+            } else {
+                addChatMessage('Movimiento no válido. Intenta con otra casilla.', 'assistant');
+                showNotification('Movimiento no válido', 'error');
+            }
+        }
+
+        // Mostrar movimientos válidos para pieza en modo control
+        function showValidMovesForControlPiece(row, col) {
+            const piece = boardState[row][col];
+            const pieceType = getPieceType(piece);
+            
+            if (pieceType && pieceData[pieceType]) {
+                const moves = pieceData[pieceType].moves(row, col);
+                
+                moves.forEach(([moveRow, moveCol]) => {
+                    const square = document.querySelector(`[data-row="${moveRow}"][data-col="${moveCol}"]`);
+                    if (square) {
+                        // Si hay una pieza enemiga, marcar como captura
+                        if (boardState[moveRow][moveCol] && isOpponentPiece(piece, boardState[moveRow][moveCol])) {
+                            square.classList.add('capture-move');
+                        } else if (!boardState[moveRow][moveCol]) {
+                            square.classList.add('valid-move');
+                        }
+                    }
+                });
+            }
+        }
+
+        // Verificar si el movimiento es válido (lógica simplificada)
+        function isValidMove(fromRow, fromCol, toRow, toCol) {
+            const piece = boardState[fromRow][fromCol];
+            const targetPiece = boardState[toRow][toCol];
+            
+            // No se puede mover a una casilla ocupada por pieza propia
+            if (targetPiece && !isOpponentPiece(piece, targetPiece)) {
+                return false;
+            }
+            
+            const pieceType = getPieceType(piece);
+            if (pieceType && pieceData[pieceType]) {
+                const validMoves = pieceData[pieceType].moves(fromRow, fromCol);
+                return validMoves.some(([row, col]) => row === toRow && col === toCol);
+            }
+            
+            return false;
+        }
+
+        // Mostrar confirmación de movimiento en modo control
+        function showControlMoveConfirmation(move) {
+            const moveDescription = `${getPieceName(move.piece)} de ${move.from} a ${move.to}${move.capture ? ' (captura)' : ''}`;
+            
+            document.getElementById('move-description').textContent = moveDescription;
+            document.getElementById('confirmation-modal').classList.remove('hidden');
+            document.getElementById('teacher-confirmation').checked = false;
+            document.getElementById('confirm-execution').disabled = true;
+            
+            // Actualizar el movimiento actual para la confirmación
+            currentMove = move;
+        }
+
+        // Ejecutar movimiento en modo control
+        function executeControlMove() {
+            if (!controlMode.pendingMove) return;
+            
+            const { fromRow, fromCol, toRow, toCol, move } = controlMode.pendingMove;
+            
+            // Actualizar estado del tablero
+            boardState[toRow][toCol] = boardState[fromRow][fromCol];
+            boardState[fromRow][fromCol] = '';
+            
+            // Actualizar tablero visual
+            initializeChessBoard();
+            
+            // Limpiar estado de control
+            controlMode = {
+                selectedPiece: null,
+                fromSquare: null,
+                toSquare: null,
+                pendingMove: null
+            };
+            
+            // Agregar experiencia
+            addExperience(5, 'ejecutar movimiento');
+            
+            addChatMessage(`¡Movimiento ejecutado! ${getPieceName(move.piece)} se movió de ${move.from} a ${move.to}. El robot está replicando este movimiento.`, 'assistant');
+            addToLog(`✅ Movimiento ejecutado: ${move.from} → ${move.to}`);
+            
+            if (ttsEnabled) {
+                speak(`Movimiento ejecutado. ${getPieceName(move.piece)} de ${move.from} a ${move.to}`);
+            }
+        }
+
+        // Funciones auxiliares para el modo control
+        function getPieceName(piece) {
+            const pieceNames = {
+                '♔': 'Rey blanco', '♕': 'Reina blanca', '♖': 'Torre blanca', 
+                '♗': 'Alfil blanco', '♘': 'Caballo blanco', '♙': 'Peón blanco',
+                '♚': 'Rey negro', '♛': 'Reina negra', '♜': 'Torre negra',
+                '♝': 'Alfil negro', '♞': 'Caballo negro', '♟': 'Peón negro'
+            };
+            return pieceNames[piece] || 'Pieza desconocida';
+        }
+
+        function getPieceType(piece) {
+            const typeMap = {
+                '♔': 'king', '♕': 'queen', '♖': 'rook', '♗': 'bishop', '♘': 'knight', '♙': 'pawn',
+                '♚': 'king', '♛': 'queen', '♜': 'rook', '♝': 'bishop', '♞': 'knight', '♟': 'pawn'
+            };
+            return typeMap[piece];
+        }
+
+        function isOpponentPiece(piece1, piece2) {
+            const whitePieces = ['♔', '♕', '♖', '♗', '♘', '♙'];
+            const blackPieces = ['♚', '♛', '♜', '♝', '♞', '♟'];
+            
+            return (whitePieces.includes(piece1) && blackPieces.includes(piece2)) ||
+                   (blackPieces.includes(piece1) && whitePieces.includes(piece2));
+        }
+
+        // Determina si una pieza es negra
+        function isBlackPiece(piece) {
+            const blackPieces = ['♚', '♛', '♜', '♝', '♞', '♟'];
+            return blackPieces.includes(piece);
+        }
+
+        // Practice mode functions
+
+        function startPracticeGame() {
+            practiceGameActive = true;
+            currentPlayer = 'user';
+            gameOver = false;
+            selectedFromSquare = null;
+            boardState = [...initialBoardState.map(row => [...row])];
+            initializeChessBoard();
+            updateTurnIndicator();
+            addToLog('♟️ Nueva partida de práctica iniciada. Blancas (usuario) vs Negras (robot)');
+        }
+
+        function endPracticeGame() {
+            practiceGameActive = false;
+            currentPlayer = 'user';
+            gameOver = false;
+            selectedFromSquare = null;
+            clearSelection();
+            // Optionally reset board or leave as is
+            addToLog('🏁 Partida de práctica terminada');
+        }
+
+        function handlePracticeClick(row, col, element) {
+            const piece = boardState[row][col];
+            if (!piece) return;
+
+            // User plays white, robot black
+            const userPieces = ['♖', '♘', '♗', '♕', '♔', '♙'];
+            if (!userPieces.includes(piece)) {
+                addChatMessage('Es tu turno. Solo puedes mover piezas blancas.', 'assistant');
+                return;
+            }
+
+            if (!selectedFromSquare) {
+                // Select piece
+                selectedFromSquare = { row, col };
+                element.classList.add('selected');
+                showValidMovesForPractice(row, col);
+                addChatMessage(`Pieza seleccionada en ${getSquareName(row, col)}. Elige la casilla destino.`, 'assistant');
+            } else {
+                // Attempt move
+                if (selectedFromSquare.row === row && selectedFromSquare.col === col) {
+                    // Deselect
+                    clearSelection();
+                    selectedFromSquare = null;
+                    return;
+                }
+
+                if (isValidPracticeMove(selectedFromSquare.row, selectedFromSquare.col, row, col)) {
+                    // Execute move
+                    executePracticeMove(selectedFromSquare.row, selectedFromSquare.col, row, col);
+                    selectedFromSquare = null;
+                    clearSelection();
+
+                    // Switch to robot turn
+                    setTimeout(() => {
+                        currentPlayer = 'robot';
+                        updateTurnIndicator();
+                        addChatMessage('Pensando en mi movimiento...', 'assistant');
+                        robotMakeMove();
+                    }, 1000);
+                } else {
+                    addChatMessage('Movimiento inválido. Intenta otro.', 'assistant');
+                    showNotification('Movimiento inválido', 'error');
+                }
+            }
+        }
+
+        function showValidMovesForPractice(fromRow, fromCol) {
+            const piece = boardState[fromRow][fromCol];
+            const pieceType = getPieceType(piece);
+            if (pieceType && pieceData[pieceType]) {
+                const moves = pieceData[pieceType].moves(fromRow, fromCol);
+                moves.forEach(([toRow, toCol]) => {
+                    if (isValidPracticeMove(fromRow, fromCol, toRow, toCol)) {
+                        const square = document.querySelector(`[data-row="${toRow}"][data-col="${toCol}"]`);
+                        if (square) {
+                            if (boardState[toRow][toCol] && isOpponentPiece(piece, boardState[toRow][toCol])) {
+                                square.classList.add('capture-move');
+                            } else {
+                                square.classList.add('valid-move');
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        function isValidPracticeMove(fromRow, fromCol, toRow, toCol) {
+            // Basic validation: same piece type moves, no own piece, within bounds
+            if (toRow < 0 || toRow >= 8 || toCol < 0 || toCol >= 8) return false;
+            const piece = boardState[fromRow][fromCol];
+            const target = boardState[toRow][toCol];
+            if (target && !isOpponentPiece(piece, target)) return false;
+            const pieceType = getPieceType(piece);
+            if (!pieceType || !pieceData[pieceType]) return false;
+            const moves = pieceData[pieceType].moves(fromRow, fromCol);
+            return moves.some(([r, c]) => r === toRow && c === toCol);
+            // Note: This is simplified; no check for blocking pieces or special moves like castling/pawn promotion
+        }
+
+        function executePracticeMove(fromRow, fromCol, toRow, toCol) {
+            const piece = boardState[fromRow][fromCol];
+            boardState[toRow][toCol] = piece;
+            boardState[fromRow][fromCol] = '';
+            initializeChessBoard();
+
+            const from = getSquareName(fromRow, fromCol);
+            const to = getSquareName(toRow, toCol);
+            const move = { from, to, piece };
+
+            // Prepare for robot execution
+            currentMove = move;
+
+            // Show confirmation for user move
+            showConfirmationModal(move);
+
+            addToLog(`👤 Movimiento usuario: ${from} → ${to}`);
+            addExperience(3, 'jugar práctica');
+        }
+
+        function robotMakeMove() {
+            if (gameOver || !practiceGameActive) return;
+
+            // Simple AI: find first legal move for black
+            let robotMove = null;
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const piece = boardState[r][c];
+                    if (piece && ['♜', '♞', '♝', '♛', '♚', '♟'].includes(piece)) {
+                        const pieceType = getPieceType(piece);
+                        if (pieceType) {
+                            const moves = pieceData[pieceType].moves(r, c);
+                            for (let [toR, toC] of moves) {
+                                if (isValidPracticeMove(r, c, toR, toC)) {
+                                    robotMove = { fromRow: r, fromCol: c, toRow: toR, toCol: toC };
+                                    break;
+                                }
+                            }
+                            if (robotMove) break;
+                        }
+                    }
+                    if (robotMove) break;
+                }
+                if (robotMove) break;
+            }
+
+            if (!robotMove) {
+                // No moves, game over
+                endGame('El robot no tiene movimientos. ¡Ganaste!');
+                return;
+            }
+
+            // Execute robot move
+            setTimeout(() => {
+                const from = getSquareName(robotMove.fromRow, robotMove.fromCol);
+                const to = getSquareName(robotMove.toRow, robotMove.toCol);
+                const piece = boardState[robotMove.fromRow][robotMove.fromCol];
+                const move = { from, to, piece: getPieceName(piece) };
+
+                // Simulate robot thinking, then execute without confirmation (auto)
+                showCountdown(() => {
+                    boardState[robotMove.toRow][robotMove.toCol] = boardState[robotMove.fromRow][robotMove.fromCol];
+                    boardState[robotMove.fromRow][robotMove.fromCol] = '';
+                    initializeChessBoard();
+
+                    // Simulate robot execution
+                    prepareMove(move, { speed: 0.4, grip: 0.3 });
+                    addToLog(`🤖 Movimiento robot: ${from} → ${to}`);
+                    addChatMessage(`Mi movimiento: ${getPieceName(piece)} de ${from} a ${to}. Tu turno.`, 'assistant');
+
+                    if (ttsEnabled) {
+                        speak(`Mi movimiento: ${getPieceName(piece)} de ${from} a ${to}`);
+                    }
+
+                    // Check game over
+                    if (hasNoLegalMoves('user')) {
+                        endGame('¡No tienes movimientos! El robot gana.');
+                        return;
+                    }
+
+                    currentPlayer = 'user';
+                    updateTurnIndicator();
+                }, 2000); // Delay for "thinking"
+            }, 1500);
+        }
+
+        function hasNoLegalMoves(player) {
+            const pieces = player === 'user' ? ['♖', '♘', '♗', '♕', '♔', '♙'] : ['♜', '♞', '♝', '♛', '♚', '♟'];
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    if (pieces.includes(boardState[r][c])) {
+                        const type = getPieceType(boardState[r][c]);
+                        if (type) {
+                            const moves = pieceData[type].moves(r, c);
+                            for (let [toR, toC] of moves) {
+                                if (isValidPracticeMove(r, c, toR, toC)) {
+                                    return false;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+
+        function endGame(message) {
+            gameOver = true;
+            addChatMessage(message, 'assistant');
+            showNotification(message, 'achievement');
+            updateTurnIndicator();
+            addToLog('🏁 Fin de partida');
+        }
+
+        function updateTurnIndicator() {
+            let indicator = document.getElementById('turn-indicator');
+            if (!indicator) {
+                const boardContainer = document.querySelector('.bg-white.rounded-lg.shadow-sm.border.p-4'); // Approximate selector for board div
+                indicator = document.createElement('div');
+                indicator.id = 'turn-indicator';
+                indicator.className = 'text-center font-semibold text-lg mb-4 p-2 rounded bg-gray-100';
+                boardContainer.insertBefore(indicator, boardContainer.firstChild);
+            }
+            indicator.textContent = gameOver ? 'Partida terminada' : currentPlayer === 'user' ? '👤 Tu turno (Blancas)' : '🤖 Turno del robot (Negras)';
+            indicator.style.color = currentPlayer === 'user' ? 'var(--libyan-green)' : 'var(--libyan-red)';
+        }
+
+        // Override confirmExecution for practice mode (auto for robot, but since robot doesn't use modal, ok)
+        // Note: For user moves, still use modal as before
+
+        function getSquareName(row, col) {
+            return String.fromCharCode(97 + col) + (8 - row);
+        }
+        
+        // -----------------------------
+        // Reportes de estudiante
+        // -----------------------------
+        // Devuelve el nombre del estudiante activo guardado en localStorage
+        async function getActiveStudentName() {
+            try {
+                const name = (localStorage.getItem('activeStudent') || '').trim();
+                if (name) return name;
+
+                // Si no hay activeStudent en localStorage, intentar obtener último estudiante del servidor
+                try {
+                    const resp = await fetch('/students');
+                    if (resp.ok) {
+                        const list = await resp.json();
+                        if (Array.isArray(list) && list.length) {
+                            // tomar el último (más recientemente activo)
+                            const last = list[list.length - 1];
+                            if (last && last.name) return last.name;
+                        }
+                    }
+                } catch (e) {
+                    // servidor no disponible -> fallback a localStorage 'students'
+                    try {
+                        const raw = localStorage.getItem('students');
+                        if (raw) {
+                            const list = JSON.parse(raw);
+                            if (Array.isArray(list) && list.length) {
+                                const last = list[list.length - 1];
+                                if (last && last.name) return last.name;
+                            }
+                        }
+                    } catch (err) { /* ignore */ }
+                }
+            } catch (e) {
+                console.error('Error leyendo activeStudent', e);
+            }
+            return null;
+        }
+
+        // Recupera la información del estudiante (intenta servidor, luego localStorage)
+        async function fetchStudentData(name) {
+            if (!name) return null;
+            const normalized = name.trim().toLowerCase();
+
+            // Intentar servidor
+            try {
+                const resp = await fetch('/students');
+                if (resp.ok) {
+                    const list = await resp.json();
+                    if (Array.isArray(list)) {
+                        const found = list.find(s => s.name && s.name.toLowerCase() === normalized);
+                        if (found) return found;
+                    }
+                }
+            } catch (e) {
+                console.warn('No se pudo consultar /students en el servidor, usando localStorage como fallback', e);
+            }
+
+            // Fallback: buscar en localStorage
+            try {
+                const raw = localStorage.getItem('students');
+                if (raw) {
+                    const list = JSON.parse(raw);
+                    if (Array.isArray(list)) {
+                        const found = list.find(s => s.name && s.name.toLowerCase() === normalized);
+                        if (found) return found;
+                    }
+                }
+            } catch (e) {
+                console.error('Error parseando localStorage.students', e);
+            }
+
+            return null;
+        }
+
+                // Genera y descarga un reporte como documento HTML (tabla con lecciones, puntos y nivel)
+                function generateReportForStudent(student) {
+                        if (!student || !student.name) {
+                                showNotification('Datos de estudiante inválidos para generar reporte.', 'error');
+                                return;
+                        }
+
+                        // Recopilar información de lecciones desde el DOM (fallback si student no contiene detalle)
+                        const lessons = [];
+                        try {
+                                const lessonButtons = document.querySelectorAll('#lessons-container .lesson-card');
+                                lessonButtons.forEach(btn => {
+                                        const header = btn.querySelector('.flex.items-center');
+                                        let spans = [];
+                                        if (header) spans = Array.from(header.querySelectorAll('span'));
+
+                                        const nameEl = spans[0] ? spans[0].textContent.trim() : (btn.getAttribute('data-piece') || '');
+                                        const difficultyEl = spans[1] ? spans[1].textContent.trim() : (btn.getAttribute('data-difficulty') || '');
+                                        const statusEl = spans.find(s => s.classList && s.classList.contains('lesson-status'));
+                                        const status = statusEl ? statusEl.textContent.trim() : (btn.classList.contains('completed') ? '✅' : '❌');
+                                        const descEl = btn.querySelector('.text-xs.text-gray-500');
+                                        const description = descEl ? descEl.textContent.trim() : '';
+
+                                        // intentar extraer puntos desde la descripción (ej. "+10 puntos")
+                                        let points = '';
+                                        const m = description.match(/\+?\s*(\d+)\s*puntos?/i);
+                                        if (m) points = m[1];
+
+                                        lessons.push({ name: nameEl, difficulty: difficultyEl, status, points, description });
+                                });
+                        } catch (e) {
+                                console.warn('No se pudieron leer las lecciones desde el DOM', e);
+                        }
+
+                        // Puntos totales y nivel desde DOM como prioridad, luego desde student
+                        let totalPoints = null;
+                        const totalPointsEl = document.getElementById('total-points');
+                        if (totalPointsEl) totalPoints = totalPointsEl.textContent.replace(/[^0-9\-]/g, '').trim();
+                        if (!totalPoints && student.totalPoints) totalPoints = String(student.totalPoints);
+                        if (!totalPoints && student.points) totalPoints = String(student.points);
+                        if (!totalPoints) totalPoints = '0';
+
+                        let currentLevel = null;
+                        const levelEl = document.getElementById('current-level');
+                        if (levelEl) currentLevel = levelEl.textContent.trim();
+                        if (!currentLevel && student.level) currentLevel = String(student.level);
+                        if (!currentLevel) currentLevel = '0';
+
+                        // Si no se pudo obtener las lecciones del DOM, intentar usar student.lessons
+                        if (lessons.length === 0 && Array.isArray(student.lessons)) {
+                                student.lessons.forEach(l => {
+                                        lessons.push({ name: l.name || l.piece || '', difficulty: l.difficulty || '', status: l.completed ? '✅' : '❌', points: l.points || '', description: l.description || '' });
+                                });
+                        }
+
+                        // Construir HTML del reporte
+                        const generatedAt = new Date().toLocaleString();
+                        const safeName = student.name.replace(/\s+/g, '_');
+                        const filename = `reporte_${safeName}_${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.html`;
+
+                        const html = `<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Reporte - ${escapeHtml(student.name)}</title>
+    <style>
+        body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; padding:24px; color:#111}
+        h1{font-size:20px;margin-bottom:4px}
+        .meta{color:#555;margin-bottom:16px}
+        table{width:100%;border-collapse:collapse;margin-top:12px}
+        th,td{border:1px solid #ddd;padding:8px;text-align:left}
+        th{background:#f7f7f7}
+        .center{text-align:center}
+        .small{font-size:12px;color:#666}
+    </style>
+</head>
+<body>
+    <h1>Reporte de Progreso — ${escapeHtml(student.name)}</h1>
+    <div class="meta">Generado: ${escapeHtml(generatedAt)} &nbsp;•&nbsp; Usuario: ${escapeHtml(student.name)}</div>
+
+    <h2>🎓 Tu Progreso</h2>
+    <p class="small">Puntos totales ganados: <strong style="color:#16a34a">${escapeHtml(totalPoints)}</strong></p>
+    <p class="small">Nivel: <strong>${escapeHtml(currentLevel)}</strong></p>
+
+    <h2>🏆 Lecciones Progresivas</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Lección</th>
+                <th>Dificultad</th>
+                <th>Estado</th>
+                <th>Puntos</th>
+                <th>Descripción</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${lessons.map(l => `
+                <tr>
+                    <td>${escapeHtml(l.name)}</td>
+                    <td>${escapeHtml(l.difficulty)}</td>
+                    <td class="center">${escapeHtml(l.status)}</td>
+                    <td class="center">${escapeHtml(l.points || '')}</td>
+                    <td>${escapeHtml(l.description)}</td>
+                </tr>
+            `).join('')}
+        </tbody>
+    </table>
+
+    <p class="small" style="margin-top:18px">Este reporte fue generado desde la aplicación Robot Ajedrecita.</p>
+</body>
+</html>`;
+
+                        const blob = new Blob([html], { type: 'text/html' });
+                        const url = URL.createObjectURL(blob);
+
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        a.remove();
+                        setTimeout(() => URL.revokeObjectURL(url), 1500);
+
+                        addToLog(`Reporte (HTML) generado para ${student.name}`);
+                        showNotification('Reporte generado y descargado (HTML).', 'success');
+                }
+
+                // Helper: escapar texto para insertar en HTML
+                function escapeHtml(str){
+                        if (str === null || str === undefined) return '';
+                        return String(str)
+                                .replace(/&/g, '&amp;')
+                                .replace(/</g, '&lt;')
+                                .replace(/>/g, '&gt;')
+                                .replace(/"/g, '&quot;')
+                                .replace(/'/g, '&#39;');
+                }
+        
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9903c20a327ee564',t:'MTc2MDc0NTY1My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><iframe height="1" width="1" style="position: absolute; top: 0px; left: 0px; border: none; visibility: hidden;"></iframe>
+    <footer class="footer-stripe text-white py-2 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <p class="text-sm">© 2025 Robot  Ajedrecita </p>
+        </div>
+    </footer>
+
+    <script>
+        // Seguridad: eliminar accidentalmente atributos contenteditable y desactivar designMode
+        (function disableEditingSurface(){
+            try {
+                // Desactivar designMode global por si acaso
+                if (document.designMode && document.designMode.toLowerCase() !== 'off') {
+                    document.designMode = 'off';
+                }
+
+                // Remover cualquier atributo contenteditable que pueda haberse añadido
+                document.querySelectorAll('[contenteditable]').forEach(function(el){
+                    try { el.removeAttribute('contenteditable'); } catch(e) { /* ignore */ }
+                });
+
+                // Evitar que elementos no-input reciban foco que permita edición
+                document.addEventListener('focusin', function(ev){
+                    const t = ev.target;
+                    const tag = t && t.tagName ? t.tagName.toLowerCase() : '';
+                    const isEditable = t && (t.isContentEditable || tag === 'input' || tag === 'textarea' || t.getAttribute('role') === 'textbox');
+                    if (!isEditable) {
+                        try { t.blur && t.blur(); } catch(e) { /* ignore */ }
+                    }
+                }, true);
+
+                // Prevenir inserción de texto en elementos que no sean input/textarea
+                document.addEventListener('keydown', function(ev){
+                    const t = ev.target;
+                    const tag = t && t.tagName ? t.tagName.toLowerCase() : '';
+                    if (tag !== 'input' && tag !== 'textarea' && !t.isContentEditable) {
+                        // Permitir teclas de navegación y atajos habituales
+                        const allowed = ['Tab','Escape','ArrowLeft','ArrowRight','ArrowUp','ArrowDown','F1','F2','F3','F4','F5','F11','F12'];
+                        if (!allowed.includes(ev.key)) {
+                            ev.stopPropagation();
+                            // No call preventDefault to preserve shortcuts like Ctrl+F, but stop text insertion
+                        }
+                    }
+                }, true);
+            } catch (err) {
+                console.warn('No se pudo aplicar la protección contra edición en línea:', err);
+            }
+        })();
+    </script>
+
+        <script>
+            // Bloqueo agresivo: forzar contenteditable=false en todo elemento que no sea input/textarea
+            (function aggressiveBlockEditing(){
+                try {
+                    // CSS para ocultar caret y evitar selección en elementos no-editables
+                    const style = document.createElement('style');
+                    style.id = 'block-editing-style';
+                    style.textContent = `
+                        /* No afectar inputs/textareas ni elementos marcados explícitamente editable */
+                        :where(body) *:not(input):not(textarea):not([contenteditable="true"]) {
+                            caret-color: transparent !important;
+                            user-select: none !important;
+                            -webkit-user-select: none !important;
+                            -moz-user-select: none !important;
+                        }
+                        /* Mantener normal los inputs y textareas */
+                        input, textarea { user-select: text !important; caret-color: auto !important; }
+                    `;
+                    document.head.appendChild(style);
+
+                    // Forzar contentEditable=false en elementos existentes (excepto inputs/textareas)
+                    function setAllNonInputsFalse(root){
+                        const walker = document.createTreeWalker(root || document.body, NodeFilter.SHOW_ELEMENT, null, false);
+                        let node = walker.currentNode;
+                        while(node){
+                            try{
+                                const tag = node.tagName && node.tagName.toLowerCase();
+                                if (tag !== 'input' && tag !== 'textarea' && node.getAttribute && node.getAttribute('contenteditable') !== 'true'){
+                                    node.setAttribute('contenteditable','false');
+                                }
+                            }catch(e){}
+                            node = walker.nextNode();
+                        }
+                    }
+                    setAllNonInputsFalse(document.documentElement || document.body);
+
+                    // Interceptar cambios dinámicos que puedan permitir edición
+                    const mo = new MutationObserver(records => {
+                        for (const r of records){
+                            if (r.type === 'attributes'){
+                                const t = r.target;
+                                try{
+                                    const tag = t.tagName && t.tagName.toLowerCase();
+                                    if (tag !== 'input' && tag !== 'textarea'){
+                                        // si alguien pone contenteditable=true, revertirlo
+                                        if (t.getAttribute && t.getAttribute('contenteditable') === 'true'){
+                                            t.setAttribute('contenteditable','false');
+                                            console.log('Reverted contenteditable on', t);
+                                        }
+                                    }
+                                }catch(e){}
+                            }
+                            if (r.type === 'childList' && r.addedNodes && r.addedNodes.length){
+                                r.addedNodes.forEach(n => { if (n.nodeType === 1) setAllNonInputsFalse(n); });
+                            }
+                        }
+                    });
+                    mo.observe(document.documentElement || document.body, { attributes: true, subtree: true, attributeFilter: ['contenteditable'] , childList: true });
+
+                    // Evitar entrada de texto en elementos que no sean input/textarea
+                    window.addEventListener('beforeinput', function(e){
+                        const t = e.target;
+                        const tag = t && t.tagName ? t.tagName.toLowerCase() : '';
+                        if (tag !== 'input' && tag !== 'textarea' && !t.isContentEditable){
+                            e.preventDefault();
+                            e.stopImmediatePropagation();
+                            return false;
+                        }
+                    }, true);
+
+                    // Evitar keypress/keydown que inserten texto
+                    window.addEventListener('keydown', function(e){
+                        const t = e.target;
+                        const tag = t && t.tagName ? t.tagName.toLowerCase() : '';
+                        if (tag !== 'input' && tag !== 'textarea' && !t.isContentEditable){
+                            // permitir navegación y atajos con Ctrl/Cmd
+                            if (e.ctrlKey || e.metaKey) return;
+                            const allowed = ['Tab','Escape','ArrowLeft','ArrowRight','ArrowUp','ArrowDown','F1','F2','F3','F4','F5','F11','F12','Enter','Backspace','Delete'];
+                            if (!allowed.includes(e.key)){
+                                e.preventDefault();
+                                e.stopImmediatePropagation();
+                            }
+                        }
+                    }, true);
+
+                    // Enfoques: si un elemento no-input recibe foco, quitar foco (salvo elementos marcados editable=true explícitamente)
+                    window.addEventListener('focusin', function(e){
+                        const t = e.target;
+                        const tag = t && t.tagName ? t.tagName.toLowerCase() : '';
+                        if (tag !== 'input' && tag !== 'textarea' && t.getAttribute && t.getAttribute('contenteditable') !== 'true'){
+                            try{ t.blur && t.blur(); }catch(e){}
+                        }
+                    }, true);
+
+                    console.log('Aggressive editing block installed');
+                } catch (err){
+                    console.warn('Failed to install aggressive editing block', err);
+                }
+            })();
+        </script>
+
+    </body></html>
