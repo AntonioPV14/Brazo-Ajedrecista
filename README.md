@@ -87,8 +87,7 @@ Los modelos tridimensionales del diseño mecánico están disponibles en la carp
 git clone [https://github.com/AntonioPV14/Brazo-Ajedrecista.git](https://github.com/AntonioPV14/Brazo-Ajedrecista.git)
 cd Brazo-Ajedrecista
 
-
-
+---
 # ♟️ Intelligent Robotic Chess Arm
 
 ![NodeJS](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
