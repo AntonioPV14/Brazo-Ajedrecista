@@ -88,7 +88,6 @@ git clone [https://github.com/AntonioPV14/Brazo-Ajedrecista.git](https://github.
 cd Brazo-Ajedrecista
 
 
--------------------------------------------------------------------------------------------------------------
 
 # ♟️ Intelligent Robotic Chess Arm
 
