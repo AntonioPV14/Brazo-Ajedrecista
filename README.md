@@ -183,8 +183,8 @@ The project's 3D models are available in STL format and are organized into the f
 
 | Directory   | Contents                                                   |
 | :---------- | :--------------------------------------------------------- |
-| `STL/Arm/`  | 3D models corresponding to the robotic arm.                |
-| `STL/Claw/` | 3D models corresponding to the claw or gripping mechanism. |
+| `stl/Arm/`  | 3D models corresponding to the robotic arm.                |
+| `stl/Claw/` | 3D models corresponding to the claw or gripping mechanism. |
 
 The files can be used for visualization, mechanical design reference, and 3D printing.
 
@@ -253,7 +253,7 @@ Brazo-Ajedrecista/
 ├── style/
 ├── tools/
 ├── views/
-├── STL/
+├── stl/
 │   ├── Arm/
 │   └── Claw/
 ├── img/
