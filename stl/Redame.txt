@@ -1,0 +1,14 @@
+## 📐 3D Models (STL)
+
+The 3D models used in the robotic chess arm are provided in **STL format** and are organized into two main folders:
+
+```text
+stl/
+├── Arm/
+└── Claw/
+```
+
+* **`Arm/`** — Contains the 3D models corresponding to the structure and mechanical components of the robotic arm.
+* **`Claw/`** — Contains the 3D models corresponding to the robotic claw and its gripping mechanism.
+
+The STL files can be used for **3D printing, visualization, and mechanical reference** of the robotic system.
