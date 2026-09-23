@@ -274,7 +274,7 @@ This project is licensed under the MIT License.
 
 Este proyecto está distribuido bajo la Licencia MIT.
 
-See the [`LICENSE`](LICENSE) file for the complete license terms.
+See the [`LICENSE`](LICENSE.txt) file for the complete license terms.
 
 ---
 
